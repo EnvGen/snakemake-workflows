@@ -1,0 +1,184 @@
+# vim: syntax=python tabstop=4 expandtab
+# coding: utf-8
+
+
+"""
+Rules for analysing fasta files with FastQC.
+
+For usage, include this in your workflow.
+"""
+
+
+__author__ = "Johannes Köster (http://johanneskoester.bitbucket.org), Ino de Bruijn (http://ino.pm)"
+__license__ = "MIT"
+
+
+# Check values in config file
+CONFIG_REQS = ["reads"]
+if "fastqc_rules" not in config:
+    raise(Exception("fastqc_rules key not in config file"))
+for cr in CONFIG_REQS:
+    if cr not in config["fastqc_rules"]:
+        raise(Exception("{cr} not in config file".format(cr=cr)))
+
+
+def get_fasta_basename(filename):
+    """Return basename of fasta/fastq file"""
+    filename = os.path.basename(filename)
+    possible_ext = [".fastq", ".fq.gz", ".fastq.gz", ".fasta", ".fa", ".fa.gz",
+        ".fasta.gz"]
+    for e in possible_ext:
+        if filename.endswith(e):
+            return filename[:-len(e)]
+    return filename
+
+import os
+
+
+rule fastqc:
+    """Generates fastqc output for given fastq or fastq.gz file. The reads can
+    be specified in the config file but this is not necessary."""
+    input:
+        lambda wildcards: \
+            ["fastqc/{}".format(os.path.basename(r)) for r in config["fastqc_rules"]["reads"] \
+                if get_fasta_basename(r) == os.path.basename(wildcards.prefix)]\
+            or glob.glob(wildcards.prefix + ".fa*") \
+            or "{}.{{fastq.gz,fastq}}".format(wildcards.prefix)
+    output:
+        "{prefix}_fastqc.zip",
+        "{prefix}_fastqc.html"
+    shell:
+        """
+        {config[fastqc_rules][load_env]}
+        fastqc {input}
+        """
+
+
+rule create_read_symlink:
+    """Create symbolic links for given reads"""
+    input:
+        lambda wildcards: config["fastqc_rules"]["reads"][wildcards.reads]
+    output:
+        "fastqc/{reads}"
+    shell:
+        """
+        ln -s $(readlink -f {input}) {output}
+        """
+
+
+rule fastqc_all:
+    input:
+        links=expand("fastqc/{reads}", reads=config["fastqc_rules"]["reads"]),
+        htmls=expand("fastqc/{reads}_fastqc.html", reads=[get_fasta_basename(r) for r in config["fastqc_rules"]["reads"]]),
+        zips=expand("fastqc/{reads}_fastqc.zip", reads=[get_fasta_basename(r) for r in config["fastqc_rules"]["reads"]])
+
+
+import glob
+
+rule fastqc_report:
+    input:
+        htmls=sorted(rules.fastqc_all.input.htmls),
+        zips=sorted(rules.fastqc_all.input.zips),
+        readme_rst=glob.glob("report/fastqc/README.rst")
+    output:
+        report="report/fastqc/index.html",
+        json="report/fastqc/data.json"
+    params:
+        htmls_basename=[os.path.basename(h) for h in sorted(rules.fastqc_all.input.htmls)],
+        readme_html="report/fastqc/README.html"
+    shell:
+        """
+        cp --parents {input.htmls} report/
+        htmls=( {params.htmls_basename} )
+        zips=( {input.zips} )
+        (
+            cat <<EOF
+                    <html>
+                    <head>
+                    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+                    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+                    <!-- Latest compiled and minified CSS -->
+                    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+                    <!-- Latest compiled and minified JavaScript -->
+                    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+
+                    <!-- Latest compiled and minified CSS -->
+                    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.5.0/bootstrap-table.min.css">
+                    <!-- Latest compiled and minified JavaScript -->
+                    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.5.0/bootstrap-table.min.js"></script>
+                    <script src="https://raw.githubusercontent.com/wenzhixin/bootstrap-table/master/src/extensions/export/bootstrap-table-export.js"></script>
+                    <script src="https://rawgit.com/kayalshri/tableExport.jquery.plugin/master/tableExport.js"></script>
+                    <script src="https://rawgit.com/kayalshri/tableExport.jquery.plugin/master/jquery.base64.js"></script>
+                    </head>
+                    <body>
+                        <h1>FastQC</h1>
+                        <div class="container">
+                            <table
+                                   data-toggle="table"
+                                   data-show-export="true"
+                                   data-search="true"
+                                   data-show-columns="true"
+                                   data-url="data.json"
+                                   data-sort-name="url"
+                                   data-sort-order="asc"
+                                   data-export="true">
+                                <thead>
+                                    <tr>
+                                        <th data-field="url"
+                                            data-sortable="true">
+                                            Reads
+                                        </th>
+                                        <th data-field="Total Sequences"
+                                            data-sortable="true">
+                                            Total Seq
+                                        </th>
+                                        <th data-field="PASS"
+                                            data-sortable="true">
+                                            PASS
+                                        </th>
+                                        <th data-field="WARN"
+                                            data-sortable="true">
+                                            WARN
+                                        </th>
+                                        <th data-field="FAIL"
+                                            data-sortable="true">
+                                            FAIL
+                                        </th>
+                                    </tr>
+                                </thead>
+                            </table>
+                        </div>
+EOF
+            for f in {input.readme_rst}; do
+                echo "<div class="container"><iframe style='width: 80%; height: 100%;' frameBorder=0 src='README.html'></iframe></div>"
+                rst2html.py $f > {params.readme_html}
+            done
+            echo '</body></html>'
+        ) > {output.report}
+        (
+            echo "["
+            for i in $(seq 0 $((${{#htmls[@]}}-1))); do
+                echo "{{"
+                echo '"url":"<a href='"'${{htmls[$i]}}'"">${{htmls[$i]}}</a>"'",'
+                echo '"PASS":'$(unzip -p ${{zips[$i]}} '*/summary.txt' | grep -c PASS),
+                echo '"WARN":'$(unzip -p ${{zips[$i]}} '*/summary.txt' | grep -c WARN),
+                echo '"FAIL":'$(unzip -p ${{zips[$i]}} '*/summary.txt' | grep -c FAIL),
+                paste <(unzip -p ${{zips[$i]}} '*/summary.txt' | cut -f2) <(unzip -p ${{zips[$i]}} '*/summary.txt' | cut -f1) | awk -v ORS=",\n" -v FS="\t" -v OFS=":" '{{print "\\""$1"\\"", "\\""$2"\\""}}'
+                echo '"Total Sequences":'$(unzip -p ${{zips[$i]}} '*/fastqc_data.txt' | grep "Total Sequences" | cut -f2)
+                if [[ $i -ne $((${{#htmls[@]}}-1)) ]]; then
+                    echo "}},"
+                else
+                    echo "}}"
+                fi
+            done
+            echo "]"
+        ) > {output.json}
+        """
+
+
+rule fastqc_clean:
+    """Remove FastQC dir"""
+    shell:
+        """
+        rm -rf fastqc/
+        """
