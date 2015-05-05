@@ -103,15 +103,31 @@ rule concoct_dnadiff_dist_matrix_report:
         ) > {output}
         """
 
+rule concoct_eval_cog_plot_merged:
+    """
+    Plot COGs using COG table
+    """
+    input:
+        "concoct/{assembly}/evaluation/scg/{concoct_params}/clustering_scg_merged.tsv"
+    output:
+        "concoct/{assembly}/evaluation/scg/{concoct_params}/clustering_scg_merged.pdf"
+    shell:
+        """
+        {config[concoct_rules][load_env]}
+        Rscript {config[concoct_rules][scripts_dir]}/COGPlot.R \
+            -s {input} \
+            -o {output}
+        """
+
 
 rule concoct_eval_cog_plot:
     """
     Plot COGs using COG table
     """
     input:
-        "concoct/{assembly}/evaluation/scg/{concoct_params}/clustering_scg{suffix}.tsv"
+        "concoct/{assembly}/evaluation/scg/{concoct_params}/clustering_scg.tsv"
     output:
-        "concoct/{assembly}/evaluation/scg/{concoct_params}/clustering_scg{suffix}.pdf"
+        "concoct/{assembly}/evaluation/scg/{concoct_params}/clustering_scg.pdf"
     shell:
         """
         {config[concoct_rules][load_env]}
