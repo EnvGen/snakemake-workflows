@@ -32,7 +32,7 @@ rule prokka_run_rpsblast:
 
 # This one is a bit tricky, it needs to be run in serial
 rule prokka_extend_output:
-    input: blast_output = ["annotation/prokka_extended/rpsblast/{{sample}}/PROKKA_{0}.out".format(db) for db in condig["prokka_extended_rules"]["dbs"]],
+    input: blast_output = ["annotation/prokka_extended/rpsblast/{{sample}}/PROKKA_{0}.out".format(db) for db in config["prokka_extended_rules"]["dbs"]],
            ext_file = "annotation/prokka_extended/prokka_output/{sample}/PROKKA.{ext}"
     output: "annotation/prokka_extended/prokka_extended/{sample}/PROKKA.all.{ext}"
     params:
@@ -54,8 +54,6 @@ rule prokka_extend_output:
         shell(cmd)
     
 
-rule prokka_extended_all_scg_approved:
-    input: dynamic("
 rule prokka_extended_all:
     input: expand("annotation/prokka_extended/prokka_extended/{sample}/PROKKA.all.gff", sample=config["prokka_extended_rules"]["samples"])
 
