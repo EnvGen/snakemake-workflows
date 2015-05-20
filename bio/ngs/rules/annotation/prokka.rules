@@ -6,7 +6,7 @@ def all_samples():
 
 rule prokka_run:
     input: 
-        lambda wildcards: config["prokka_extended_rules"]["samples"][wildcards.sample]
+        lambda wildcards: config["prokka_extended_rules"]["contigs"][wildcards.sample]
     output: 
         ["annotation/prokka_extended/prokka_output/{{sample}}/PROKKA.{0}".format(ext) for ext in ['gff', 'faa']]
     params:
@@ -55,5 +55,5 @@ rule prokka_extend_output:
     
 
 rule prokka_extended_all:
-    input: expand("annotation/prokka_extended/prokka_extended/{sample}/PROKKA.all.gff", sample=config["prokka_extended_rules"]["samples"])
+    input: expand("annotation/prokka_extended/prokka_extended/{sample}/PROKKA.all.gff", sample=config["prokka_extended_rules"]["contigs"])
 
