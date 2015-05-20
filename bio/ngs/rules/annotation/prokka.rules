@@ -11,10 +11,11 @@ rule prokka_run:
         ["annotation/prokka_extended/prokka_output/{{sample}}/PROKKA.{0}".format(ext) for ext in ['gff', 'faa']]
     params:
         PROKKA_OPS = config["prokka_extended_rules"]['prokka_ops'],
-        PROKKA_NAME = config["prokka_extended_rules"]['prokka_name']
+        PROKKA_NAME = config["prokka_extended_rules"]['prokka_name'],
+        threads = config["prokka_extended_rules"]["threads"]
     run:
         regex = re.compile('\.(\w*)')
-        outdir = "prokka_output/{wildcards.sample}"
+        outdir = "annotation/prokka_extended/prokka_output/{wildcards.sample}"
         shell("""{{config[prokka_extended_rules][load_env]}}
                 {{params.PROKKA_NAME}} --cpus 16 {{input}} --outdir {0} {{params.PROKKA_OPS}} --force --norrna --notrna && drop_prokka_date.py {0}""".format(outdir))
 
@@ -26,7 +27,7 @@ rule prokka_run_rpsblast:
     run:
         db_cap_name = wildcards.db.capitalize()
         outdir = "rpsblast/{0}".format(wildcards.sample)
-        shell("""{{config[prokka_extended_rules][load_env] && mkdir -p {outdir} && rpsblast -num_threads 4 -outfmt "6 qseqid sseqid evalue pident score qstart qend sstart send length slen" -max_target_seqs 1 -evalue 0.00001 -query {input} -db '/proj/b2010008/nobackup/database/{db_cap_name}_uppnex/{db_cap_name}' -out {output}""")
+        shell("""{config[prokka_extended_rules][load_env]} && mkdir -p {outdir} && rpsblast -num_threads 4 -outfmt "6 qseqid sseqid evalue pident score qstart qend sstart send length slen" -max_target_seqs 1 -evalue 0.00001 -query {input} -db '/proj/b2010008/nobackup/database/{db_cap_name}_uppnex/{db_cap_name}' -out {output}""")
 
 
 
@@ -39,7 +40,7 @@ rule prokka_extend_output:
         cddid_all = config["prokka_extended_rules"]["cddid_all"]
     run:
         input_ext = input.ext_file
-        cmds = ["{{config[prokka_extended_rules][load_env]}} && mkdir -p prokka_extended"]
+        cmds = ["{config[prokka_extended_rules][load_env]} && mkdir -p prokka_extended"]
         ext = wildcards.ext
         extend_bin = config["prokka_extended_rules"]["EXTEND"][ext]
         db_regex = re.compile('PROKKA_(\w*).out')
