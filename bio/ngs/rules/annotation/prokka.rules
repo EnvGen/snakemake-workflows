@@ -16,7 +16,7 @@ rule prokka_run:
         regex = re.compile('\.(\w*)')
         outdir = "prokka_output/{wildcards.sample}"
         shell("""{{config[prokka_extended_rules][load_env]}}
-                {{params.PROKKA_NAME}} --cpus 16 {{input}} --outdir {0} {{params.PROKKA_OPS}} --force --norrna --notrna && drop_prokka_date.py {1}""".format(outdir))
+                {{params.PROKKA_NAME}} --cpus 16 {{input}} --outdir {0} {{params.PROKKA_OPS}} --force --norrna --notrna && drop_prokka_date.py {0}""".format(outdir))
 
 
 
