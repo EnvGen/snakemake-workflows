@@ -4,7 +4,7 @@ import os
 def all_samples():
     return [d.split('/')[-1] for d in glob.glob("samples/*") if os.path.isdir(d)]
 
-rule prokka_run:
+rule prokka_extended_run:
     input: 
         lambda wildcards: config["prokka_extended_rules"]["contigs"][wildcards.sample]
     output: 
@@ -21,7 +21,7 @@ rule prokka_run:
 
 
 
-rule prokka_run_rpsblast:
+rule prokka_extended_run_rpsblast:
     input: "annotation/prokka_extended/prokka_output/{{sample}}/PROKKA.{0}".format('faa')
     output: "annotation/prokka_extended/rpsblast/{sample}/PROKKA_{db}.out"
     run:
@@ -32,7 +32,7 @@ rule prokka_run_rpsblast:
 
 
 # This one is a bit tricky, it needs to be run in serial
-rule prokka_extend_output:
+rule prokka_extended_output:
     input: blast_output = ["annotation/prokka_extended/rpsblast/{{sample}}/PROKKA_{0}.out".format(db) for db in config["prokka_extended_rules"]["dbs"]],
            ext_file = "annotation/prokka_extended/prokka_output/{sample}/PROKKA.{ext}"
     output: "annotation/prokka_extended/prokka_extended/{sample}/PROKKA.all.{ext}"
