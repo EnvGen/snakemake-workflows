@@ -1,0 +1,51 @@
+
+rule kallisto_index:
+    input:
+        lambda wildcards: config["kallisto_rules"]["references"][wildcards.reference]
+    output:
+        "quantification/kallisto/indices/{reference}.kaix"
+    shell:
+        """
+        {config[kallisto_rules][load_env]}
+        kallisto index {input} -i {output}
+        """
+
+rule kallisto_quant:
+    input:
+        reads=lambda wildcards: config["kallisto_rules"]["units"][wildcards.unit],
+        index="quantification/kallisto/indices/{reference}.kaix"
+    output:
+        "quantification/kallisto/quant/{reference}/units/{unit}/abundance.txt"
+    params:
+        outdir = "quantification/kallisto/quant/{reference}/units/{unit}"
+    shell:
+        """
+        {config[kallisto_rules][load_env]}
+        kallisto quant -i {input.index} -o {params.outdir} {input.reads}
+        """
+
+rule kallisto_sample_merge:
+    """
+    Merge the abundance files for multiple units into one for the given sample.
+    If the sample has only one unit, a symlink will be created.
+    """
+    input:
+        lambda wildcards: expand(
+            "quantification/kallisto/quant/{reference}/units/{unit}/abundance.txt",
+            unit=config["kallisto_rules"]["samples"][wildcards.sample],
+            reference=wildcards.reference)
+    output:
+        "quantification/kallisto/quant/{reference}/samples/{sample}/abundance.txt"
+    run:
+        if len(input) > 1:
+            shell("echo 'Not implemented'")
+        else:
+            shell("ln -fs ../units/{basename} {{output}} && touch -h "
+                  "{{output}}".format(basename=os.path.basename(input[0])))
+
+rule kallisto_quant_all:
+    input:
+        expand("quantification/kallisto/quant/{reference}/samples/{sample}/abundance.txt",
+            reference=config["kallisto_rules"]["references"],
+            sample=config["kallisto_rules"]["samples"]) 
+
