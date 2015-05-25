@@ -48,7 +48,7 @@ rule prokka_extended_output:
             db = db_regex.findall(blast_file)[0]
             output_ext = input_ext.replace(".{0}".format(ext), '.{0}.{1}'.format(db, ext))
             outdir = "prokka_extended/{0}".format(wildcards.sample)
-            cmds.append("mkdir -p {0} && {{params.python2}} {{extend_bin}} -b {1} -g {2} --cddid_all_file {{params.cddid_all}} --include-evalue --include-pident > {3}".format(outdir, blast_file, input_ext, output_ext))
+            cmds.append("mkdir -p {0} && {{extend_bin}} -b {1} -g {2} --cddid_all_file {{params.cddid_all}} --include-evalue --include-pident > {3}".format(outdir, blast_file, input_ext, output_ext))
             input_ext = output_ext
         cmds.append("cp {0} {{output}}".format(output_ext))
         cmd = " && ".join(cmds)
