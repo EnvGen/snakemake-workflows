@@ -1,4 +1,3 @@
-
 rule kallisto_index:
     input:
         lambda wildcards: config["kallisto_rules"]["references"][wildcards.reference]
@@ -40,7 +39,7 @@ rule kallisto_sample_merge:
         if len(input) > 1:
             shell("echo 'Not implemented'")
         else:
-            shell("ln -fs ../units/{basename} {{output}} && touch -h "
+            shell("ln -fs ../../units/{basename} {{output}} && touch -h "
                   "{{output}}".format(basename=os.path.basename(input[0])))
 
 rule kallisto_quant_all:
