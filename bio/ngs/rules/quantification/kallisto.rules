@@ -36,11 +36,12 @@ rule kallisto_sample_merge:
     output:
         "quantification/kallisto/quant/{reference}/samples/{sample}/abundance.txt"
     run:
+        unit_name = input[0].split('/')[-2]
         if len(input) > 1:
             shell("echo 'Not implemented'")
         else:
-            shell("ln -fs ../../units/{{wildcards.unit}}/abundance.txt {{output}} && touch -h "
-                  "{{output}}".format(basename=os.path.basename(input[0])))
+            shell("ln -fs ../../units/{unit_name}/abundance.txt {{output}} && touch -h "
+                  "{{output}}".format(unit_name))
 
 rule kallisto_quant_all:
     input:
