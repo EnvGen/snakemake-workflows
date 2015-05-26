@@ -40,8 +40,8 @@ rule kallisto_sample_merge:
         if len(input) > 1:
             shell("echo 'Not implemented'")
         else:
-            shell("ln -fs ../../units/{unit_name}/abundance.txt {{output}} && touch -h "
-                  "{{output}}".format(unit_name))
+            shell("ln -fs ../../units/{unit}/abundance.txt {{output}} && touch -h "
+                  "{{output}}".format(unit = unit_name))
 
 rule kallisto_quant_all:
     input:
