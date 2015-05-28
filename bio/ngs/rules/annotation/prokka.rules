@@ -58,3 +58,24 @@ rule prokka_extended_output:
 rule prokka_extended_all:
     input: expand("annotation/prokka_extended/prokka_extended/{sample}/PROKKA.all.gff", sample=config["prokka_extended_rules"]["contigs"])
 
+
+rule prokka_extended_get_prokka_annotation:
+    input: "annotation/prokka_extended/prokka_extended/{sample}/PROKKA.all.gff"
+    output: "annotation/prokka_extended/summary_per_sample/{sample}/{sample}.{type}.tsv"
+    params:
+        get_prokka_annotation_script = config["prokka_extended_rules"]["get_prokka_annotation_script"]
+    shell:
+        """{config[prokka_extended_rules][load_env]}
+            bash {params.get_prokka_annotation_script} {input} {wildcards.type} > {output}"""
+
+rule prokka_extended_collate_annotations:
+    input: ("annotation/prokka_extended/summary_per_sample/{sample}/{sample}.{type}.tsv", sample=config["prokka_estended_rules"]["contigs"])
+    output: "annotation/prokka_extended/summary_table/all.{type}.tsv"
+    params:
+        collate_annotations_script = config["prokka_extended_rules"]["collate_annotations_script"]
+    shell:
+        """{config[prokka_extended_rules][load_env]}
+            python {params.collate_annotations_script} {input} > {output}"""
+
+rule prokka_extended_summarize_all:
+    input: expand("annotations/prokka_extended/summary_table/all.{type}.tsv", type=[db.upper() for db in config["prokka_extended_rules"]["dbs"]])
