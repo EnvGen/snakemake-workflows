@@ -78,4 +78,4 @@ rule prokka_extended_collate_annotations:
             python {params.collate_annotations_script} {input} > {output}"""
 
 rule prokka_extended_summarize_all:
-    input: expand("annotations/prokka_extended/summary_table/all.{type}.tsv", type=[db.upper() for db in config["prokka_extended_rules"]["dbs"]])
+    input: expand("annotation/prokka_extended/summary_table/all.{type}.tsv", type=[db.upper() for db in config["prokka_extended_rules"]["dbs"]])
