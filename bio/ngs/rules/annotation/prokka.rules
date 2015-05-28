@@ -69,7 +69,7 @@ rule prokka_extended_get_prokka_annotation:
             bash {params.get_prokka_annotation_script} {input} {wildcards.type} > {output}"""
 
 rule prokka_extended_collate_annotations:
-    input: ("annotation/prokka_extended/summary_per_sample/{sample}/{sample}.{type}.tsv", sample=config["prokka_estended_rules"]["contigs"])
+    input: expand("annotation/prokka_extended/summary_per_sample/{sample}/{sample}.{type}.tsv", sample=config["prokka_estended_rules"]["contigs"])
     output: "annotation/prokka_extended/summary_table/all.{type}.tsv"
     params:
         collate_annotations_script = config["prokka_extended_rules"]["collate_annotations_script"]
