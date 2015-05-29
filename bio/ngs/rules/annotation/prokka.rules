@@ -75,7 +75,7 @@ rule prokka_extended_collate_annotations:
         collate_annotations_script = config["prokka_extended_rules"]["collate_annotations_script"]
     shell:
         """{config[prokka_extended_rules][load_env]}
-            python {params.collate_annotations_script} {input} > {output}"""
+            python {params.collate_annotations_script} <(for file in {input}; do echo $file; done ) > {output}"""
 
 rule prokka_extended_summarize_all:
     input: expand("annotation/prokka_extended/summary_table/all.{type}.tsv", type=[db.upper() for db in config["prokka_extended_rules"]["dbs"]])
