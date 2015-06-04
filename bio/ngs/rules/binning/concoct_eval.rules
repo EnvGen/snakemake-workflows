@@ -30,11 +30,11 @@ rule concoct_extract_all_bins:
     input:
         asms="concoct/{assembly}/cutup/contigs_10K.fasta",
         clustering=expand("concoct/{assembly}/output/{concoct_params}/clustering.csv",
-            assembly=sorted(config["concoct_rules"]["concoct_params"])
+            assembly=sorted(config["concoct_rules"]["concoct_params"]))
     output:
         dynamic("concoct/{assembly}/bins/{concoct_params}/{{bin_name}}.fa")
     params:
-        extract_script: config["concoct_rules"]["scripts_dir"] + "/extract_fasta_bins.py",
+        extract_script=config["concoct_rules"]["scripts_dir"] + "/extract_fasta_bins.py"
     shell:
         """
             {config[concoct_rules][load_env]
