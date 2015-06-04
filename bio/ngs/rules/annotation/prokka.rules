@@ -1,0 +1,81 @@
+import glob
+import os
+
+def all_samples():
+    return [d.split('/')[-1] for d in glob.glob("samples/*") if os.path.isdir(d)]
+
+rule prokka_extended_run:
+    input: 
+        lambda wildcards: config["prokka_extended_rules"]["contigs"][wildcards.sample]
+    output: 
+        ["annotation/prokka_extended/prokka_output/{{sample}}/PROKKA.{0}".format(ext) for ext in ['gff', 'faa']]
+    params:
+        PROKKA_OPS = config["prokka_extended_rules"]['prokka_ops'],
+        PROKKA_NAME = config["prokka_extended_rules"]['prokka_name'],
+        threads = config["prokka_extended_rules"]["threads"]
+    run:
+        regex = re.compile('\.(\w*)')
+        outdir = "annotation/prokka_extended/prokka_output/{wildcards.sample}"
+        shell("""{{config[prokka_extended_rules][load_env]}}
+                {{params.PROKKA_NAME}} --cpus 16 {{input}} --outdir {0} {{params.PROKKA_OPS}} --force --norrna --notrna && drop_prokka_date.py {0}""".format(outdir))
+
+
+
+rule prokka_extended_run_rpsblast:
+    input: "annotation/prokka_extended/prokka_output/{{sample}}/PROKKA.{0}".format('faa')
+    output: "annotation/prokka_extended/rpsblast/{sample}/PROKKA_{db}.out"
+    run:
+        db_cap_name = wildcards.db.capitalize()
+        outdir = "rpsblast/{0}".format(wildcards.sample)
+        shell("""{config[prokka_extended_rules][load_env]} && mkdir -p {outdir} && rpsblast -num_threads 4 -outfmt "6 qseqid sseqid evalue pident score qstart qend sstart send length slen" -max_target_seqs 1 -evalue 0.00001 -query {input} -db '/proj/b2010008/nobackup/database/{db_cap_name}_uppnex/{db_cap_name}' -out {output}""")
+
+
+
+# This one is a bit tricky, it needs to be run in serial
+rule prokka_extended_output:
+    input: blast_output = ["annotation/prokka_extended/rpsblast/{{sample}}/PROKKA_{0}.out".format(db) for db in config["prokka_extended_rules"]["dbs"]],
+           ext_file = "annotation/prokka_extended/prokka_output/{sample}/PROKKA.{ext}"
+    output: "annotation/prokka_extended/prokka_extended/{sample}/PROKKA.all.{ext}"
+    params:
+        cddid_all = config["prokka_extended_rules"]["cddid_all"]
+    run:
+        input_ext = input.ext_file
+        cmds = ["{config[prokka_extended_rules][load_env]} && mkdir -p prokka_extended"]
+        ext = wildcards.ext
+        extend_bin = config["prokka_extended_rules"]["EXTEND"][ext]
+        db_regex = re.compile('PROKKA_(\w*).out')
+        for blast_file in input.blast_output:
+            db = db_regex.findall(blast_file)[0]
+            output_ext = input_ext.replace(".{0}".format(ext), '.{0}.{1}'.format(db, ext))
+            outdir = "prokka_extended/{0}".format(wildcards.sample)
+            cmds.append("mkdir -p {0} && {{extend_bin}} -b {1} -g {2} --cddid_all_file {{params.cddid_all}} --include-evalue --include-pident > {3}".format(outdir, blast_file, input_ext, output_ext))
+            input_ext = output_ext
+        cmds.append("cp {0} {{output}}".format(output_ext))
+        cmd = " && ".join(cmds)
+        shell(cmd)
+    
+
+rule prokka_extended_all:
+    input: expand("annotation/prokka_extended/prokka_extended/{sample}/PROKKA.all.gff", sample=config["prokka_extended_rules"]["contigs"])
+
+
+rule prokka_extended_get_prokka_annotation:
+    input: "annotation/prokka_extended/prokka_extended/{sample}/PROKKA.all.gff"
+    output: "annotation/prokka_extended/summary_per_sample/{sample}/{sample}.{type}.tsv"
+    params:
+        get_prokka_annotation_script = config["prokka_extended_rules"]["get_prokka_annotation_script"]
+    shell:
+        """{config[prokka_extended_rules][load_env]}
+            bash {params.get_prokka_annotation_script} {input} {wildcards.type} > {output}"""
+
+rule prokka_extended_collate_annotations:
+    input: expand("annotation/prokka_extended/summary_per_sample/{sample}/{sample}.{{type}}.tsv", sample=config["prokka_extended_rules"]["contigs"])
+    output: "annotation/prokka_extended/summary_table/all.{type}.tsv"
+    params:
+        collate_annotations_script = config["prokka_extended_rules"]["collate_annotations_script"]
+    shell:
+        """{config[prokka_extended_rules][load_env]}
+            python {params.collate_annotations_script} <(for file in {input}; do echo $file; done ) > {output}"""
+
+rule prokka_extended_summarize_all:
+    input: expand("annotation/prokka_extended/summary_table/all.{type}.tsv", type=[db.upper() for db in config["prokka_extended_rules"]["dbs"]])
