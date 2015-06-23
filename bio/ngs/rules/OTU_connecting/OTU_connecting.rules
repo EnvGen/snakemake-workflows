@@ -1,0 +1,123 @@
+import os
+import glob
+from snakemake.exceptions import MissingInputException
+from snakemake.utils import report
+
+# Check values in config file
+CONFIG_REQS = ["otus", "threshold", "mapper", "mapping_params"]
+if "OTU_connecting_rules" not in config:
+    raise(Exception("OTU_connecting_rules key not in config file"))
+for cr in CONFIG_REQS:
+    if cr not in config["OTU_connecting_rules"]:
+        raise(Exception("{cr} not in OTU_connecting_rules config file".format(cr=cr)))
+
+rule OTU_mapping_all:
+    input:
+        expand("mapping/{mapper}/{mapping_params}/{assembly}/samples/{sample}.bam",
+               assembly=config["bowtie2_rules"]["references"],
+               sample=config["bowtie2_rules"]["samples"],
+               mapping_params=config["OTU_connecting_rules"]["mapping_params"],
+               mapper=config["OTU_connecting_rules"]["mapper"])
+
+
+rule OTU_filtering_threshold:
+    input:
+        "mapping/{mapper}/{mapping_params}/{otus}/samples/{sample}.bam"
+    output:
+        "mapping/{mapper}/{mapping_params}/{otus}/samples/{sample}_filtered_{threshold}.bam"
+    params:
+        otu_mapping_script = config["OTU_connecting_rules"]["filtering_script"]
+    shell:
+        """
+        {config[OTU_connecting_rules][load_env]}
+        python {params.otu_mapping_script} --nm-threshold {wildcards.threshold} {input} {output}
+        """
+
+rule bam_sort:
+    input:
+        "{prefix}.bam"
+    output:
+        "{prefix}.sorted.bam"
+    shell:
+        """
+        {config[samtools_rules][load_env]}
+        samtools sort {input} {wildcards.prefix}.sorted
+        """
+
+rule remove_mark_duplicates:
+    input:
+        "{prefix}.sorted.bam"
+    output:
+        "{prefix}.sorted.removeduplicates.bam",
+        "{prefix}.sorted.removeduplicates.metrics"
+    log:
+        "{prefix}.sorted.removeduplicates.log"
+    params:
+        java_opt="-Xms2g -Xmx32g -XX:MaxPermSize=2g -XX:+CMSClassUnloadingEnabled"
+    shell:
+        """
+        java {params.java_opt} -XX:ParallelGCThreads={threads} \
+            -jar {config[samtools_rules][picard_jars]}/MarkDuplicates.jar \
+            INPUT={input} \
+            OUTPUT={output[0]} \
+            METRICS_FILE={output[1]} \
+            AS=TRUE \
+            VALIDATION_STRINGENCY=LENIENT \
+            MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=1000 \
+            REMOVE_DUPLICATES=TRUE 2> {log}
+        """
+
+rule bedtools_coverage:
+    input:
+        "{prefix}.bam"
+    output:
+        "{prefix}.coverage.tsv"
+    shell:
+        """
+        {config[samtools_rules][load_env]}
+        genomeCoverageBed -ibam {input} > {output}
+        """
+
+rule sample_merge_early:
+    """
+    Merge bam files for multiple units into one for the given sample.
+    If the sample has only one unit, a symlink will be created.
+    """
+    input:
+        lambda wildcards: expand(
+            "mapping/bowtie2/{mapping_params}/{reference}/units/{unit}.bam",
+            unit=config["bowtie2_rules"]["samples"][wildcards.sample],
+            mapping_params=wildcards.mapping_params,
+            reference=wildcards.reference)
+    output:
+        "mapping/bowtie2/{mapping_params}/{reference}/samples/{sample}.bam"
+    run:
+        if len(input) > 1:
+            shell("{config[samtools_rules][load_env]} && "
+                  "samtools merge {output} {input}")
+        else:
+            shell("ln -fs ../units/{basename} {{output}} && touch -h "
+                  "{{output}}".format(basename=os.path.basename(input[0])))
+
+
+rule OTU_connecting_generate_coverage_table:
+    input:
+        asm=lambda wildcards: config["OTU_connecting_rules"]["otus"][wildcards.otus],
+        bedcovs=expand("mapping/{mapper}/{mapping_params}/{{otus}}/samples/{samples}_filtered_{{threshold}}.sorted.removeduplicates.coverage.tsv",
+                   samples=sorted(config["bowtie2_rules"]["samples"]),
+                   mapper=config["OTU_connecting_rules"]["mapper"],
+                   mapping_params=config["OTU_connecting_rules"]["mapping_params"])
+    output:
+        "OTU_connecting/{otus}/filtered_nm{threshold}/otu_mapping.tsv",
+        "OTU_connecting/{otus}/filtered_nm{threshold}/otu_mappingR.tsv"
+    params:
+        sample_names=sorted(config["bowtie2_rules"]["samples"])
+    shell:
+        """
+        {config[OTU_connecting_rules][load_env]}
+        python {config[OTU_connecting_rules][concoct_scripts_dir]}/gen_input_table.py --isbedfiles \
+            --samplenames <(for s in {params.sample_names}; do echo $s; done) \
+                {input.asm} {input.bedcovs} \
+                > {output[0]} && \
+        cut -f1,3- {output[0]} > {output[1]}
+        """
