@@ -100,6 +100,18 @@ rule sample_merge_early:
                   "{{output}}".format(basename=os.path.basename(input[0])))
 
 
+rule OTU_connecting_generate_kallisto_coverage_table:
+    input:
+        asm=lambda wildcards: config["OTU_connecting_rules"]["otus"][wildcards.otus],
+        quants=expand("quantification/kallisto/quant/{{otus}}/units/{sample}/abundance.txt",
+            sample=sorted(config["bowtie2_rules"]["samples"]))
+    output:
+        "OTU_connecting/{otus}/kallisto/otu_mapping.tsv"
+    shell:
+        """
+            touch {output}
+        """
+
 rule OTU_connecting_generate_coverage_table:
     input:
         asm=lambda wildcards: config["OTU_connecting_rules"]["otus"][wildcards.otus],
