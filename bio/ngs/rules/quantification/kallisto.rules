@@ -49,3 +49,24 @@ rule kallisto_quant_all:
             reference=config["kallisto_rules"]["references"],
             sample=config["kallisto_rules"]["samples"]) 
 
+rule kallisto_concoct_inputtable:
+    input:
+        expand("quantification/kallisto/quant/{reference}/samples/{sample}/abundance.txt",
+            reference=config["kallisto_rules"]["references"],
+            sample=config["kallisto_rules"]["samples"])
+    output:
+        "quantification/kallisto/inputtable_10K/{assembly}/concoct_inputtableR.tsv"
+    params:
+        sample_names=sorted(config["bowtie2_rules"]["samples"])
+    shell:
+        """
+        {config[kallisto_rules][load_env]}
+        python {config[kallisto_rules][inputtable_script] \
+            --samplenames <(for s in {params.sample_names}; do echo $s; done) \
+                {input} > {output}
+        """
+
+rule kallisto_concoct_inputtable_10K_all:        
+    input:
+        expand("quantification/kallisto/inputtable_10K/{reference}/concoct_inputtableR.tsv",
+            reference=config["kallisto_rules"]["references"])
