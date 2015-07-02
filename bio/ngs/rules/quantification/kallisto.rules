@@ -61,7 +61,7 @@ rule kallisto_concoct_inputtable:
     shell:
         """
         {config[kallisto_rules][load_env]}
-        python {config[kallisto_rules][inputtable_script] \
+        python {config[kallisto_rules][inputtable_script]} \
             --samplenames <(for s in {params.sample_names}; do echo $s; done) \
                 {input} > {output}
         """
