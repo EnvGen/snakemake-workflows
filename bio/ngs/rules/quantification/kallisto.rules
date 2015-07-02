@@ -1,4 +1,4 @@
-ule kallisto_index:
+rule kallisto_index:
     input:
         lambda wildcards: config["kallisto_rules"]["references"][wildcards.reference]
     output:
