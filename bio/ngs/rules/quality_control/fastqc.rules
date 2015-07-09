@@ -39,38 +39,20 @@ rule fastqc:
     """Generates fastqc output for given fastq or fastq.gz file. The reads can
     be specified in the config file but this is not necessary."""
     input:
-        lambda wildcards: \
-            ["fastqc/{}".format(os.path.basename(r)) for r in config["fastqc_rules"]["reads"] \
-                if get_fasta_basename(r) == os.path.basename(wildcards.prefix)]\
-            or glob.glob(wildcards.prefix + ".fa*") \
-            or "{}.{{fastq.gz,fastq}}".format(wildcards.prefix)
+        lambda wildcards: config["fastqc_rules"]["reads"][wildcards.reads]
     output:
-        "{prefix}_fastqc.zip",
-        "{prefix}_fastqc.html"
+        zip = "fastqc/{reads}/{reads}_fastqc.zip",
+        html = "fastqc/{reads}/{reads}_fastqc.html"
     shell:
         """
         {config[fastqc_rules][load_env]}
-        fastqc {input}
+        fastqc {input} -o `dirname {output.html}`
         """
-
-
-rule create_read_symlink:
-    """Create symbolic links for given reads"""
-    input:
-        lambda wildcards: config["fastqc_rules"]["reads"][wildcards.reads]
-    output:
-        "fastqc/{reads}"
-    shell:
-        """
-        ln -s $(readlink -f {input}) {output}
-        """
-
 
 rule fastqc_all:
     input:
-        links=expand("fastqc/{reads}", reads=config["fastqc_rules"]["reads"]),
-        htmls=expand("fastqc/{reads}_fastqc.html", reads=[get_fasta_basename(r) for r in config["fastqc_rules"]["reads"]]),
-        zips=expand("fastqc/{reads}_fastqc.zip", reads=[get_fasta_basename(r) for r in config["fastqc_rules"]["reads"]])
+        htmls=expand("fastqc/{reads}/{reads}_fastqc.html", reads=config["fastqc_rules"]["reads"]),
+        zips=expand("fastqc/{reads}/{reads}_fastqc.zip", reads=config["fastqc_rules"]["reads"])
 
 
 import glob
