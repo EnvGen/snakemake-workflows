@@ -217,6 +217,15 @@ rule concoct_eval_cog_table_merged:
             > {output}
         """
 
+rule concoct_eval_merged:
+    """
+    Plot COGs using COG table for only merged
+    """
+    input:
+        expand("concoct/{assembly}/evaluation/scg/{concoct_params}/clustering_scg_merged.pdf",
+                assembly=config["concoct_rules"]["assemblies"],
+                concoct_params = config["concoct_rules"]["concoct_params"])
+
 rule concoct_eval_all:
     """
     Plot COGs using COG table for both merged and cutup
