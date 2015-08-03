@@ -1,0 +1,60 @@
+# vim: syntax=python tabstop=4 expandtab
+# coding: utf-8
+
+
+"""
+Rules for trimming NGS reads with cutadapt
+(http://cutadapt.readthedocs.org/en/latest/guide.html#illumina-truseq)
+
+For usage, include this in your workflow.
+"""
+
+
+# Check values in config file
+CONFIG_REQS = ["reads", "trim_params"]
+if "cutadapt_rules" not in config:
+    raise(Exception("cutadapt_rules key not in config file"))
+for cr in CONFIG_REQS:
+    if cr not in config["cutadapt_rules"]:
+        raise(Exception("{cr} not in config file".format(cr=cr)))
+
+rule cutadapt_pe:
+    """Trims given paired-end reads with given parameters"""
+    input:
+        "cutadapt/trim_ends/{trim_params}/{reads}_R1.fq.gz",
+        "cutadapt/trim_ends/{trim_params}/{reads}_R2.fq.gz"
+    output:
+        "cutadapt/adapt_trim/{trim_params}/{reads}_R1.fq.gz",
+        "cutadapt/adapt_trim/{trim_params}/{reads}_R2.fq.gz"
+    params:
+        trim_params=lambda wildcards: config["cutadapt_rules"]["trim_params"][wildcards.trim_params]["adapt_trim"]
+    shell:
+        """
+            {config[cutadapt_rules][load_env]}
+            cutadapt {params.trim_params} \
+            -o {output[0]} -p {output[1]} \
+            {input}
+        """
+
+rule cutadapt_trim_fixed:
+    """Trim fixed number of bases for each read"""
+    input: 
+        lambda wildcards: config["cutadapt_rules"]["reads"][wildcards.reads][int(wildcards.read_no) - 1]
+    output:
+        "cutadapt/trim_ends/{trim_params}/{reads}_R{read_no}.fq.gz"
+    params:
+        trim_params_start=lambda wildcards: config["cutadapt_rules"]["trim_params"][wildcards.trim_params][wildcards.read_no]["trim_start"],
+        trim_params_end=lambda wildcards: config["cutadapt_rules"]["trim_params"][wildcards.trim_params][wildcards.read_no]["trim_end"]
+    shell:
+        """
+            {config[cutadapt_rules][load_env]}
+            cutadapt {params.trim_params_start} {input} | \
+            cutadapt {params.trim_params_end} -o {output} -
+        """
+
+rule cutadapt_all:
+    """Trim all reads with all supplied trimming parameters"""
+    input:
+        trimmed_reads=expand("cutadapt/adapt_trim/{trim_params}/{reads}_{ext}.fq.gz", reads=config["cutadapt_rules"]["reads"],
+        trim_params=config["cutadapt_rules"]["trim_params"],
+        ext=["R1","R2"])
