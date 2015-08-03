@@ -54,13 +54,12 @@ rule fastqc_all:
         htmls=expand("fastqc/{reads}/{reads}_fastqc.html", reads=config["fastqc_rules"]["reads"]),
         zips=expand("fastqc/{reads}/{reads}_fastqc.zip", reads=config["fastqc_rules"]["reads"])
 
-
 import glob
 
 rule fastqc_report:
     input:
-        htmls=sorted(rules.fastqc_all.input.htmls),
-        zips=sorted(rules.fastqc_all.input.zips),
+        htmls=expand("fastqc/{reads}/{reads}_fastqc.html", reads=config["fastqc_rules"]["reads"]),
+        zips=expand("fastqc/{reads}/{reads}_fastqc.zip", reads=config["fastqc_rules"]["reads"]),
         readme_rst=glob.glob("report/fastqc/README.rst")
     output:
         report="report/fastqc/index.html",
