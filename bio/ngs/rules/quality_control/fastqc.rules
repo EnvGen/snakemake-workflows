@@ -43,11 +43,16 @@ rule fastqc:
     output:
         zip = "fastqc/{reads}/{reads}_fastqc.zip",
         html = "fastqc/{reads}/{reads}_fastqc.html"
-    shell:
-        """
+    run:
+       read_file_cut_one_ext = os.path.splitext(os.path.basename(str(input)))[0]
+       tmp_output_zip = "fastqc/{0}/{1}_fastqc.zip".format(wildcards.reads, read_file_cut_one_ext)
+       tmp_output_html ="fastqc/{0}/{1}_fastqc.html".format(wildcards.reads, read_file_cut_one_ext)
+       shell("""
         {config[fastqc_rules][load_env]}
         fastqc {input} -o `dirname {output.html}`
-        """
+        mv {tmp_output_html} {output.html}
+        mv {tmp_output_zip} {output.zip}
+        """)
 
 rule fastqc_all:
     input:
