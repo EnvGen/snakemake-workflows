@@ -102,7 +102,7 @@ rule concoct_extract_approved_scg_bins_nocutup:
         scg_tsvs=expand("concoct/{assembly}/evaluation/scg/{concoct_params}/clustering_scg_nocutup.tsv",
             assembly=sorted(config["concoct_rules"]["assemblies"]),
             concoct_params=sorted(config["concoct_rules"]["concoct_params"])),
-        asms=lambda wildcards: config["concoct_rules"]["assemblies"][wildcards.assembly]
+        asms=[config["concoct_rules"]["assemblies"][assembly] for assembly in config["concoct_rules"]["assemblies"].keys()]
     output:
         dynamic("concoct/approved_scg_bins_nocutup/{cluster_name}.fa")
     params:
