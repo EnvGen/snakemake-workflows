@@ -132,7 +132,7 @@ rule concoct_extract_approved_scg_bins_all:
 
 rule concoct_extract_approved_scg_bins_all_nocutup:
     input:
-        dynamic("concoct/approved_scg_bins/{cluster_name}.fa")
+        dynamic("concoct/approved_scg_bins_nocutup/{cluster_name}.fa")
 
 rule concoct_dnadiff_dist_matrix:
     """Get distance matrix from approved SCG bins"""
