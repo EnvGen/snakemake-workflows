@@ -21,27 +21,31 @@ for cr in CONFIG_REQS:
 rule cutadapt_pe:
     """Trims given paired-end reads with given parameters"""
     input:
-        "cutadapt/trim_ends/{trim_params}/{reads}_R1.fq.gz",
-        "cutadapt/trim_ends/{trim_params}/{reads}_R2.fq.gz"
+        "cutadapt/trimming/{trim_params}/{reads}_R1.fq.gz",
+        "cutadapt/trimming/{trim_params}/{reads}_R2.fq.gz"
     output:
-        "cutadapt/adapt_trim/{trim_params}/{reads}_R1.fq.gz",
-        "cutadapt/adapt_trim/{trim_params}/{reads}_R2.fq.gz"
-    params:
-        trim_params=lambda wildcards: config["cutadapt_rules"]["trim_params"][wildcards.trim_params]["adapt_trim"]
-    shell:
-        """
-            {config[cutadapt_rules][load_env]}
-            cutadapt {params.trim_params} \
+        "cutadapt/adapt_cutting/{trim_params}/{reads}_R1.fq.gz",
+        "cutadapt/adapt_cutting/{trim_params}/{reads}_R2.fq.gz"
+    run:
+        config_trim_params = config["cutadapt_rules"]["trim_params"][wildcards.trim_params]
+        if "adapt_trim" in config_trim_params:
+            trim_params = config_trim_params["adapt_trim"]
+        else: 
+            #A variable template exists (the adapters depend on the sample)
+            variables = config_trim_params["variables"][wildcards.reads]
+            trim_params = config_trim_params["variable_template"].format(**variables)
+        shell("""{config[cutadapt_rules][load_env]}
+            cutadapt {trim_params} \
             -o {output[0]} -p {output[1]} \
             {input}
-        """
+            """)
 
 rule cutadapt_trim_fixed:
     """Trim fixed number of bases for each read"""
     input: 
         lambda wildcards: config["cutadapt_rules"]["reads"][wildcards.reads][int(wildcards.read_no) - 1]
     output:
-        "cutadapt/trim_ends/{trim_params}/{reads}_R{read_no}.fq.gz"
+        "cutadapt/trimming/{trim_params}/{reads}_R{read_no}.fq.gz"
     params:
         trim_params_start=lambda wildcards: config["cutadapt_rules"]["trim_params"][wildcards.trim_params][wildcards.read_no]["trim_start"],
         trim_params_end=lambda wildcards: config["cutadapt_rules"]["trim_params"][wildcards.trim_params][wildcards.read_no]["trim_end"]
@@ -55,6 +59,6 @@ rule cutadapt_trim_fixed:
 rule cutadapt_all:
     """Trim all reads with all supplied trimming parameters"""
     input:
-        trimmed_reads=expand("cutadapt/adapt_trim/{trim_params}/{reads}_{ext}.fq.gz", reads=config["cutadapt_rules"]["reads"],
+        trimmed_reads=expand("cutadapt/adapt_cutting/{trim_params}/{reads}_{ext}.fq.gz", reads=config["cutadapt_rules"]["reads"],
         trim_params=config["cutadapt_rules"]["trim_params"],
         ext=["R1","R2"])
