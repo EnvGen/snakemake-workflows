@@ -1,0 +1,38 @@
+# vim: syntax=python tabstop=4 expandtab
+# coding: utf-8
+
+
+"""
+Rules for removing duplicates before mapping with fastuniq
+(http://sourceforge.net/projects/fastuniq/)
+
+For usage, include this in your workflow.
+"""
+
+
+rule fastuniq:
+    """Removes duplicates without mapping"""
+    input:
+        R1="cutadapt/adapt_cutting/{trim_params}/{reads}_R1.fq.gz",
+        R2="cutadapt/adapt_cutting/{trim_params}/{reads}_R2.fq.gz"
+    output:
+        R1="fastuniq/{trim_params}/{reads}_R1.fq.gz",
+        R2="fastuniq/{trim_params}/{reads}_R2.fq.gz"
+    params:
+        tmp_R1="fastuniq/{trim_params}/{reads}_R1.fq",
+        tmp_R2="fastuniq/{trim_params}/{reads}_R2.fq",
+        fifo_R1="fastuniq/{trim_params}/{reads}_fifo_R1.fq",
+        fifo_R2="fastuniq/{trim_params}/{reads}_fifo_R2.fq",
+        file_list="fastuniq/{trim_params}/{reads}_file_list.txt"
+    shell:
+        """
+            mkfifo {params.fifo_R1} {params.fifo_R2}
+            zcat {input.R1} > {params.fifo_R1} &
+            zcat {input.R2} > {params.fifo_R2} &
+            echo {params.fifo_R1} > {params.file_list}
+            echo {params.fifo_R2} >> {params.file_list}
+            fastuniq -i {params.file_list} -t q -o {params.tmp_R1} -p {params.tmp_R2}
+            rm {params.fifo_R1} {params.fifo_R2} {params.file_list}
+            parallel gzip --best ::: {params.tmp_R1} {params.tmp_R2}
+        """
+
