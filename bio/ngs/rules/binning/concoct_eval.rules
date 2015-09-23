@@ -117,7 +117,7 @@ rule concoct_extract_approved_scg_bins_nocutup:
         """
             {config[concoct_rules][load_env]}
             python {config[concoct_rules][scripts_dir]}/extract_scg_bins.py \
-                --output_folder concoct/approved_scg_bins \
+                --output_folder concoct/approved_scg_bins_nocutup \
                 --scg_tsvs {input.scg_tsvs} \
                 --fasta_files {input.asms} \
                 --names {params.names} \
