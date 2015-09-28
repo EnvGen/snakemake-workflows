@@ -84,7 +84,8 @@ rule concoct_extract_approved_scg_bins:
             assembly=sorted(config["concoct_rules"]["assemblies"]),
             concoct_params=sorted(config["concoct_rules"]["concoct_params"])),
         groups=expand("{assembly}",
-            assembly=sorted(config["concoct_rules"]["assemblies"]))
+            assembly=sorted(config["concoct_rules"]["assemblies"]),
+            concoct_params=sorted(config["concoct_rules"]["concoct_params"]))
     shell:
         """
             {config[concoct_rules][load_env]}
