@@ -39,7 +39,7 @@ rule prokka_extended_output:
     params:
         cddid_all = config["prokka_extended_rules"]["cddid_all"]
     run:
-        input_ext = input.ext_file
+        input_ext = input.ext_file[0]
         cmds = ["{config[prokka_extended_rules][load_env]} && mkdir -p prokka_extended"]
         ext = wildcards.ext
         extend_bin = config["prokka_extended_rules"]["EXTEND"][ext]
