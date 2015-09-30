@@ -153,12 +153,19 @@ rule concoct_dnadiff_dist_matrix:
         "concoct/dnadiff_dist_matrix/dist_matrix.tsv",
         "concoct/dnadiff_dist_matrix/hclust_heatmap.pdf",
         "concoct/dnadiff_dist_matrix/hclust_dendrogram.pdf"
+    params:
+        tmp_dir = config["concoct_rules"]["dnadiff_tmp_dir"]
     run:
         sorted_input = sorted(input.clusters)
         shell("""
         {config[concoct_rules][load_env]}
+        mkdir -p {params.tmp_dir}
         python {config[concoct_rules][scripts_dir]}/dnadiff_dist_matrix.py \
-            concoct/dnadiff_dist_matrix {sorted_input}
+            {params.tmp_dir} {sorted_input}
+        mv {params.tmp_dir}/dist_matrix.tsv {params.output[0]} 
+        mv {params.tmp_dir}/dist_matrix.tsv {params.output[1]}
+        mv {params.tmp_dir}/dist_matrix.tsv {params.output[2]}
+        rm {params.tmp_dir}
         """)
 
 
