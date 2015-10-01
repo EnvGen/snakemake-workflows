@@ -163,9 +163,9 @@ rule concoct_dnadiff_dist_matrix:
         python {config[concoct_rules][scripts_dir]}/dnadiff_dist_matrix.py \
             {params.tmp_dir} {sorted_input}
         mv {params.tmp_dir}/dist_matrix.tsv {output[0]} 
-        mv {params.tmp_dir}/dist_matrix.tsv {output[1]}
-        mv {params.tmp_dir}/dist_matrix.tsv {output[2]}
-        rm {params.tmp_dir}
+        mv {params.tmp_dir}/hclust_heatmap.pdf {output[1]}
+        mv {params.tmp_dir}/hclust_dendrogram.pdf {output[2]}
+        rm -r {params.tmp_dir}
         """)
 
 
