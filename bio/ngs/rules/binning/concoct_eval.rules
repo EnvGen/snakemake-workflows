@@ -162,9 +162,9 @@ rule concoct_dnadiff_dist_matrix:
         mkdir -p {params.tmp_dir}
         python {config[concoct_rules][scripts_dir]}/dnadiff_dist_matrix.py \
             {params.tmp_dir} {sorted_input}
-        mv {params.tmp_dir}/dist_matrix.tsv {params.output[0]} 
-        mv {params.tmp_dir}/dist_matrix.tsv {params.output[1]}
-        mv {params.tmp_dir}/dist_matrix.tsv {params.output[2]}
+        mv {params.tmp_dir}/dist_matrix.tsv {output[0]} 
+        mv {params.tmp_dir}/dist_matrix.tsv {output[1]}
+        mv {params.tmp_dir}/dist_matrix.tsv {output[2]}
         rm {params.tmp_dir}
         """)
 
