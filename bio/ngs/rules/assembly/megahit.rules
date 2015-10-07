@@ -1,0 +1,38 @@
+# vim: syntax=python tabstop=4 expandtab
+# coding: utf-8
+
+
+__author__ = "Ino de Bruijn"
+__license__ = "MIT"
+
+
+def create_megahit_read_input_str(unit):
+    if len(unit) == 2:
+        return "-1 {unit[0]} -2 {unit[1]}".format(unit=unit)
+    elif len(unit) == 1:
+        return "-r {unit[0]}".format(unit=unit)
+    else:
+        raise(Exception("Units should either be paired library or single read library."))
+
+rule megahit_assemble_sample:
+    input:
+        lambda wildcards: config["megahit_rules"]["samples"][wildcards.sample]
+    output:
+        "assembly/megahit/{assembly_params}/{sample}/final.contigs.fa"
+    params:
+        custom=lambda wildcards: config["megahit_rules"]["assembly_params"][wildcards.assembly_params],
+        read_input_str=lambda wildcards: create_megahit_read_input_str(config["megahit_rules"]["samples"][wildcards.sample])
+    shell:
+        """
+        {config[megahit_rules][load_env]}
+        rm -rf assembly/megahit/{wildcards.assembly_params}/{wildcards.sample}/tmp
+        megahit {params.custom} \
+        {params.read_input_str} \
+        -o assembly/megahit/{wildcards.assembly_params}/{wildcards.sample}/tmp
+        mv assembly/megahit/{wildcards.assembly_params}/{wildcards.sample}/tmp/* \
+           assembly/megahit/{wildcards.assembly_params}/{wildcards.sample}/
+        """
+
+rule megahit_assemble_sample_all:
+    input:
+        expand("assembly/megahit/{assembly_params}/{sample}/final.contigs.fa", assembly_params=config["megahit_rules"]["assembly_params"], sample=config["megahit_rules"]["samples"])

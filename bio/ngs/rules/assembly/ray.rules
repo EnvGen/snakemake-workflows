@@ -16,12 +16,12 @@ def create_ray_read_input_str(unit):
 
 rule ray_assembly:
     input:
-        lambda wildcards: sum([config["ray_rules"]["units"][unit] for unit in config["ray_rules"]["samples"][wildcards.sample]], [])
+        lambda wildcards: config["ray_rules"]["samples"][wildcards.sample]
     output:
         "assembly/ray/{assembly_params}/{sample}/out_{kmer}/Contigs.fasta"
     params:
         custom=lambda wildcards: config["ray_rules"]["assembly_params"][wildcards.assembly_params],
-        read_input_str=lambda wildcards: " ".join([create_ray_read_input_str(config["ray_rules"]["units"][unit]) for unit in config["ray_rules"]["samples"][wildcards.sample]])
+        read_input_str=lambda wildcards: create_ray_read_input_str(config["ray_rules"]["samples"][wildcards.sample])
     shell:
         """
         {config[ray_rules][load_env]}
