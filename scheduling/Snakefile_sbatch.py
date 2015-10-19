@@ -112,11 +112,12 @@ if __name__ == '__main__':
             formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("dependencies", nargs="*", help="{{dependencies}} string given by snakemake\n")
     parser.add_argument("snakescript", help="Snakemake generated shell script with commands to execute snakemake rule\n")
+    parser.add_argument("--config", default="config_sbatch.json", help="Config file to read sbatch settings from. Default='config_sbatch.json'")
     args = parser.parse_args()
 
     #print("Passed bidniz:", args.snakescript, args.dependencies, file=sys.stderr)
     #print("Passed args:", args, file=sys.stderr)
-    sj = SnakeJobSbatch(args.snakescript, dependencies=args.dependencies, config=json.load(open("config_sbatch.json")))
+    sj = SnakeJobSbatch(args.snakescript, dependencies=args.dependencies, config=json.load(open(args.config)))
     try:
         sj.schedule()
     except UndefinedJobRule as err:
