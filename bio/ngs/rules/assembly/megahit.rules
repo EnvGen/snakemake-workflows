@@ -55,23 +55,30 @@ def create_megahit_coassembly_paired_read_input_str(units):
         reverse_string += " " + reverse
     return forward_string + reverse_string
 
+def all_units(sample_dict):
+    all_units_list = []
+    for sample_n, units in sample_dict.items():
+        for unit in units:
+            all_units_list.append(unit)
+    return all_units_list
+
 rule megahit_coassemble:
     input:
-        config["megahit_rules"]["samples"]
+        all_units(config["megahit_rules"]["samples"])
     output:
-        "assembly/megahit_coassembly/{assembly_params}/final_contigs.fa"
+        "assembly/megahit_coassembly/{assembly_params}/final.contigs.fa"
     params:
-        custom=lambda wildcards: config["megahit_rules"]["coassembly_params"][wildcards.assembly_params],
+        custom=lambda wildcards: config["megahit_rules"]["coassembly_params"][wildcards.assembly_params]
     run:
         read_input_str = create_megahit_coassembly_paired_read_input_str(input)
         shell("""{config[megahit_rules][load_env]}
         rm -rf assembly/megahit_coassembly/{wildcards.assembly_params}/tmp
         megahit {params.custom} \
-        {params.read_input_str} \
+        {read_input_str} \
         -o assembly/megahit_coassembly/{wildcards.assembly_params}/tmp
         mv assembly/megahit_coassembly/{wildcards.assembly_params}/tmp/* \
            assembly/megahit_coassembly/{wildcards.assembly_params}/
-        """
+        """)
 
 rule megahit_coassemble_all:
     input:
