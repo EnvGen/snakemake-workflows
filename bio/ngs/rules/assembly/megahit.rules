@@ -46,9 +46,9 @@ def create_megahit_coassembly_paired_read_input_str(units):
         else:
             reverses.append(unit)
     assert(len(forwards) == len(reverses))
-    forward_string = "-1" + ", ".join(forwards)
+    forward_string = "-1 " + ", ".join(forwards)
     
-    reverse_string = " -2" + ", ".join(reverses)
+    reverse_string = " -2 " + ", ".join(reverses)
     return forward_string + reverse_string
 
 def all_units(sample_dict):
