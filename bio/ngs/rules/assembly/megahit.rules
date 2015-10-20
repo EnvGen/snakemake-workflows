@@ -62,10 +62,9 @@ rule megahit_coassemble:
         "assembly/megahit_coassembly/{assembly_params}/final_contigs.fa"
     params:
         custom=lambda wildcards: config["megahit_rules"]["coassembly_params"][wildcards.assembly_params],
-        read_input_str=create_megahit_coassembly_paired_read_input_str(input)
-    shell:
-        """
-        {config[megahit_rules][load_env]}
+    run:
+        read_input_str = create_megahit_coassembly_paired_read_input_str(input)
+        shell("""{config[megahit_rules][load_env]}
         rm -rf assembly/megahit_coassembly/{wildcards.assembly_params}/tmp
         megahit {params.custom} \
         {params.read_input_str} \
