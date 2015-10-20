@@ -36,3 +36,44 @@ rule megahit_assemble_sample:
 rule megahit_assemble_sample_all:
     input:
         expand("assembly/megahit/{assembly_params}/{sample}/final.contigs.fa", assembly_params=config["megahit_rules"]["assembly_params"], sample=config["megahit_rules"]["samples"])
+
+def create_megahit_coassembly_paired_read_input_str(units):
+    forwards = []
+    reverses = []
+    for i, unit in enumerate(units):
+        if i % 2 == 0:
+            forwards.append(unit)
+        else:
+            reverses.append(unit)
+    assert(len(forwards) == len(reverses))
+    forward_string = "-1 "
+    for forward in forwards:
+        forward_string += " " + forward
+    
+    reverse_string = " -2 "
+    for reverse in reverses:
+        reverse_string += " " + reverse
+    return forward_string + reverse_string
+
+rule megahit_coassemble:
+    input:
+        config["megahit_rules"]["samples"]
+    output:
+        "assembly/megahit_coassembly/{assembly_params}/final_contigs.fa"
+    params:
+        custom=lambda wildcards: config["megahit_rules"]["coassembly_params"][wildcards.assembly_params],
+        read_input_str=create_megahit_coassembly_paired_read_input_str(input)
+    shell:
+        """
+        {config[megahit_rules][load_env]}
+        rm -rf assembly/megahit_coassembly/{wildcards.assembly_params}/tmp
+        megahit {params.custom} \
+        {params.read_input_str} \
+        -o assembly/megahit_coassembly/{wildcards.assembly_params}/tmp
+        mv assembly/megahit_coassembly/{wildcards.assembly_params}/tmp/* \
+           assembly/megahit_coassembly/{wildcards.assembly_params}/
+        """
+
+rule megahit_coassemble_all:
+    input:
+        expand("assembly/megahit_coassembly/{assembly_params}/final.contigs.fa", assembly_params=config["megahit_rules"]["coassembly_params"]) 
