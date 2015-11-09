@@ -79,3 +79,27 @@ rule megahit_coassemble:
 rule megahit_coassemble_all:
     input:
         expand("assembly/megahit_coassembly/{assembly_params}/final.contigs.fa", assembly_params=config["megahit_rules"]["coassembly_params"]) 
+
+rule megahit_coassemble_split:
+    input:
+        "assembly/megahit_coassembly/{assembly_params}/final.contigs.fa"
+    output: 
+        dynamic("assembly/megahit_coassembly/{assembly_params}/final.contigs.{{part}}.fa")
+    params:
+        filter_length_script = config["megahit_rules"]["filter_length_script"],
+        split_in_parts_script = config["megahit_rules"]["split_in_parts_script"],
+        length_threshold = config["megahit_rules"]["coassembly_pre_annotation_length_threshold"],
+        prefix = "megahit_coassembly",
+        sequences_per_part = config["megahit_rules"]["coassembly_pre_annotation_sequences_per_part"] 
+    shell:
+        """
+           {config[megahit_rules][load_env]}
+           python {params.filter_length_script} {input} \
+           -l {params.length_threshold} | python {params.split_in_parts_script} \
+           --prefix {params.prefix} {params.sequences_per_part}
+        """ 
+
+rule megahit_coassemble_split_all:
+    input:
+        dynamic(expand("assembly/megahit_coassembly/{assembly_params}/final.contigs.{{part}}.fa",
+            assembly_params=config["megahit_rules"]["coassembly_params"]))
