@@ -84,7 +84,7 @@ rule megahit_coassemble_split:
     input:
         "assembly/megahit_coassembly/{assembly_params}/final.contigs.fa"
     output: 
-        dynamic("assembly/megahit_coassembly/{assembly_params}/final.contigs.{{part}}.fa")
+        dynamic("assembly/megahit_coassembly/{assembly_params}/final.contigs.{{part}}.fasta")
     params:
         filter_length_script = config["megahit_rules"]["filter_length_script"],
         split_in_parts_script = config["megahit_rules"]["split_in_parts_script"],
@@ -101,5 +101,5 @@ rule megahit_coassemble_split:
 
 rule megahit_coassemble_split_all:
     input:
-        dynamic(expand("assembly/megahit_coassembly/{assembly_params}/final.contigs.{{part}}.fa",
+        dynamic(expand("assembly/megahit_coassembly/{assembly_params}/final.contigs.{{part}}.fasta",
             assembly_params=config["megahit_rules"]["coassembly_params"]))
