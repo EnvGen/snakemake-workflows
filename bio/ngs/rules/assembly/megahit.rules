@@ -98,7 +98,7 @@ rule megahit_coassemble_split:
             cd {params.outdir}
            python {params.filter_length_script} --input_fasta {input} \
            -l {params.length_threshold} | python {params.split_in_parts_script} \
-           --prefix {params.prefix} {params.sequences_per_part}
+           --prefix {params.prefix} -o {params.outdir} {params.sequences_per_part}
         """ 
 
 rule megahit_coassemble_split_all:
