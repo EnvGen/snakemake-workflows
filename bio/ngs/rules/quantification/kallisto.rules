@@ -20,7 +20,7 @@ rule kallisto_quant:
     shell:
         """
         {config[kallisto_rules][load_env]}
-        kallisto quant -i {input.index} -o {params.outdir} {input.reads}
+        kallisto quant --plaintext -i {input.index} -o {params.outdir} {input.reads}
         """
 
 rule kallisto_sample_merge:
