@@ -1,3 +1,6 @@
+# Temporary files from a broken file system
+*.nfs*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

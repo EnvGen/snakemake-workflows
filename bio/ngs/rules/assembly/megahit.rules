@@ -76,3 +76,27 @@ rule megahit_coassemble:
 rule megahit_coassemble_all:
     input:
         expand("assembly/megahit_coassembly/{assembly_params}/final.contigs.fa", assembly_params=config["megahit_rules"]["coassembly_params"]) 
+
+rule megahit_coassemble_split:
+    input:
+        "assembly/megahit_coassembly/{assembly_params}/final.contigs.fa"
+    output: 
+        dynamic("assembly/megahit_coassembly/{assembly_params}/parts/contigs.{part}.fasta")
+    params:
+        filter_length_script = config["megahit_rules"]["filter_length_script"],
+        split_in_parts_script = config["megahit_rules"]["split_in_parts_script"],
+        length_threshold = config["megahit_rules"]["coassembly_pre_annotation_length_threshold"],
+        sequences_per_part = config["megahit_rules"]["coassembly_pre_annotation_sequences_per_part"],
+        outdir = "assembly/megahit_coassembly/{assembly_params}/parts/"
+    shell:
+        """
+           {config[megahit_rules][load_env]}
+           python {params.filter_length_script} --input_fasta {input} \
+           -l {params.length_threshold} | python {params.split_in_parts_script} \
+           --prefix "contigs" -o {params.outdir} {params.sequences_per_part}
+        """ 
+
+rule megahit_coassemble_split_all:
+    input:
+        dynamic(expand("assembly/megahit_coassembly/{assembly_params}/parts/contigs.{{part}}.fasta",
+            assembly_params=config["megahit_rules"]["coassembly_params"]))
