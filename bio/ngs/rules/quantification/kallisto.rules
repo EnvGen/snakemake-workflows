@@ -55,7 +55,7 @@ rule kallisto_concoct_inputtable:
             reference=config["kallisto_rules"]["references"],
             sample=config["kallisto_rules"]["samples"])
     output:
-        "quantification/kallisto/inputtable_10K/{assembly}/concoct_inputtableR.tsv"
+        "concoct/{assembly}/input/concoct_inputtableR.tsv"
     params:
         sample_names=sorted(config["bowtie2_rules"]["samples"])
     shell:
