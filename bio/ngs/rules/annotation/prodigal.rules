@@ -9,16 +9,20 @@ rule prodigal_run:
     log:
         "annotation/prodigal/{parameters}/{assembly}/proteins/proteins.log"
     params:
-        prodigal_params=lambda wildcards: config["prodigal_rules"]["prodigal_params"][wildcards.parameters]
-    shell:
-        """
+        prodigal_params=lambda wildcards: config["prodigal_rules"]["prodigal_params"][wildcards.parameters],
+    run:
+        if input.asm[0].endswith('.gz'):
+            input_asm = "<(zcat {0})".format(input.asm)
+        else:
+            input_asm = input.asm
+        shell("""
         {config[prodigal_rules][load_env]}
-        prodigal -i {input.asm} \
+        prodigal -i {input_asm} \
             -a {output.aa} \
             -f gff \
             {params.prodigal_params} > {output.gff} \
             2> {log}
-        """
+        """)
 
 rule prodigal_run_all:
     input:

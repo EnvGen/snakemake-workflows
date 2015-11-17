@@ -10,11 +10,12 @@ rule rpsblast_run:
     params:
         rpsblast_params=lambda wildcards: config["rpsblast_rules"]["rpsblast_params"][wildcards.parameters].replace('"',"'"),
         db=lambda wildcards: config["rpsblast_rules"]["databases"][wildcards.db],
-        parallel_params=config["rpsblast_rules"].get("parallel_params", "")
+        parallel_params=config["rpsblast_rules"].get("parallel_params", ""),
+        cat_cmd = lambda wildcards: 'zcat' if config["rpsblast_rules"]["query_aas"][wildcards.protein_aa].endswith('.gz') else 'cat'
     shell:
         """
         {config[rpsblast_rules][load_env]}
-        cat {input.aa} | \
+        {params.cat_cmd} {input.aa} | \
         parallel {params.parallel_params} \
             --pipe -k --recstart '>' --no-notice \
             rpsblast "{params.rpsblast_params}" \

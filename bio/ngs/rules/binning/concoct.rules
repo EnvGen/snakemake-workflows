@@ -112,7 +112,7 @@ rule merge_concoct_results:
     input:
         "concoct/{assembly}/output/{concoct_params}/clustering.csv"
     output:
-        "concoct/{assembly}/output/{concoct_params}/clustering_merged.csv"
+        "concoct/{assembly}/output/{concoct_params}/clustering_nocutup.csv"
     shell:
         """
             {config[concoct_rules][load_env]}
