@@ -68,12 +68,9 @@ rule megahit_coassemble:
     run:
         read_input_str = create_megahit_coassembly_paired_read_input_str(input)
         shell("""{config[megahit_rules][load_env]}
-        rm -rf assembly/megahit_coassembly/{wildcards.assembly_params}/tmp
         megahit {params.custom} \
         {read_input_str} \
-        -o assembly/megahit_coassembly/{wildcards.assembly_params}/tmp
-        mv assembly/megahit_coassembly/{wildcards.assembly_params}/tmp/* \
-           assembly/megahit_coassembly/{wildcards.assembly_params}/
+        -o assembly/megahit_coassembly/{wildcards.assembly_params}/
         """)
 
 rule megahit_coassemble_all:
