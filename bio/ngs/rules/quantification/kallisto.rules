@@ -9,14 +9,28 @@ rule kallisto_index:
         kallisto index {input} -i {output}
         """
 
-rule kallisto_quant:
+# rule kallisto_quant:
+#     input:
+#         reads=lambda wildcards: config["kallisto_rules"]["units"][wildcards.unit],
+#         index="quantification/kallisto/indices/{reference}.kaix"
+#     output:
+#         "quantification/kallisto/quant/{reference}/units/{unit}/abundance.tsv"
+#     params:
+#         outdir = "quantification/kallisto/quant/{reference}/units/{unit}"
+#     shell:
+#         """
+#         {config[kallisto_rules][load_env]}
+#         kallisto quant --plaintext -i {input.index} -o {params.outdir} {input.reads}
+#         """
+
+rule kallisto_quant_sample:
     input:
-        reads=lambda wildcards: config["kallisto_rules"]["units"][wildcards.unit],
+        reads=lambda wildcards: config["kallisto_rules"]["samples"][wildcards.sample],
         index="quantification/kallisto/indices/{reference}.kaix"
     output:
-        "quantification/kallisto/quant/{reference}/units/{unit}/abundance.tsv"
+        "quantification/kallisto/quant/{reference}/samples/{sample}/abundance.tsv"
     params:
-        outdir = "quantification/kallisto/quant/{reference}/units/{unit}"
+        outdir = "quantification/kallisto/quant/{reference}/samples/{sample}"
     shell:
         """
         {config[kallisto_rules][load_env]}
@@ -43,6 +57,8 @@ rule kallisto_sample_merge:
             shell("ln -fs ../../units/{unit}/abundance.tsv {{output}} && touch -h "
                   "{{output}}".format(unit = unit_name))
 
+#ruleorder: kallisto_sample_merge > kallisto_quant_sample
+
 rule kallisto_quant_all:
     input:
         expand("quantification/kallisto/quant/{reference}/samples/{sample}/abundance.tsv",
@@ -57,7 +73,7 @@ rule kallisto_concoct_inputtable:
     output:
         "concoct/{assembly}/input/concoct_inputtableR.tsv"
     params:
-        sample_names=sorted(config["bowtie2_rules"]["samples"])
+        sample_names=sorted(config["kallisto_rules"]["samples"])
     shell:
         """
         {config[kallisto_rules][load_env]}
