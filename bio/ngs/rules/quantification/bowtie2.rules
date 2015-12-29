@@ -1,0 +1,64 @@
+import os
+import glob
+
+# Check values in config file
+CONFIG_REQS = ["references", "samples", "mapping_params", "scripts_dir"]
+if "bowtie2_quant_rules" not in config:
+    raise(Exception("bowtie2_quant key not in config file"))
+for cr in CONFIG_REQS:
+    if cr not in config["bowtie2_quant_rules"]:
+        raise(Exception("{cr} not in bowtie2_quant_rules config file".format(cr=cr)))
+
+rule bowtie2_quant_multiple_gff_2_bed:
+    input:
+        lambda wildcards: dynamic("annotation/prokka_extended/prokka_extended/{0}.{{part}}".format(wildcards.reference))
+    output:
+        "annotation/prokka_extended/all_genes_as_bed/{reference}/all_genes.bed"
+    params:
+        multiple_gff_2_bed = config["bowtie2_quant_rules"]["scripts_dir"]["multiple_gff2bed"] 
+    shell:
+        """
+        {config[bowtie2_quant_rules][load_env]}
+        python {params.multiple_gff_2_bed} 
+
+
+rule bowtie2_quant_genes:
+    input:
+        bam = "{prefix}.sorted.bam",
+        gff = "{prefix}.gff"
+    output:
+        "quantification/bowtie2_genes/{reference}/{sample}/avg_cov.tsv"
+    params:
+        gff2bed = 
+        coverage_for_genes = config["bowtie2_quant_rules"]["scripts_dir"]["coverage_for_genes"]
+    shell:
+        """
+        {config[bowtie2_quant_rules][load_env]}
+        {params.gff2bed} {input.gff} > {output.gene_bed}
+        bedtools coverage -hist -a {output.gene_bed} -b {input.bam} > {output.hist}
+        {params.coverage_for_genes} -i <(echo {output.hist}) > {output.coverage}
+        """
+
+rule bowtie2_quant:
+    input:
+        asm=lambda wildcards: config["bowtie2_quant_rules"]["references"][wildcards.reference],
+        bedcovs=expand("mapping/{mapper}/{mapping_params}/{{reference}}/samples/{{sample}}.sorted.removeduplicates.coverage.tsv",
+                   mapper=config["bowtie2_quant_rules"]["mapper"],
+                   mapping_params=config["bowtie2_quant_rules"]["mapping_params"])
+    output:
+        "quantification/bowtie2/{reference}/{sample}/avg_cov.tsv",
+    shell:
+        """
+        {config[bowtie2_quant_rules][load_env]}
+        python {config[bowtie2_quant_rules][scripts_dir]}/gen_input_table.py --isbedfiles \
+            --samplenames <(echo {wildcards.sample}) \
+                {input.asm} {input.bedcovs} \
+                > {output}
+        """
+
+
+rule bowtie2_quant_all:
+    input:
+        expand("quantification/bowtie2/{reference}/{sample}/avg_cov.tsv", 
+            reference=config["bowtie2_quant_rules"]["references"],
+            sample=config["bowtie2_quant_rules"]["samples"])
