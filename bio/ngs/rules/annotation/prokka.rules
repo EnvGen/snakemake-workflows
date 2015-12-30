@@ -4,6 +4,12 @@ import os
 def all_samples():
     return [d.split('/')[-1] for d in glob.glob("samples/*") if os.path.isdir(d)]
 
+def locustag_for_sample(wildcards, default, config):
+    try:
+        return config["prokka_extended_rules"]["locustags"][wildcards.sample]
+    except KeyError:
+        return default 
+
 rule prokka_extended_run:
     input: 
         lambda wildcards: config["prokka_extended_rules"]["contigs"][wildcards.sample]
@@ -12,12 +18,13 @@ rule prokka_extended_run:
     params:
         PROKKA_OPS = config["prokka_extended_rules"]['prokka_ops'],
         PROKKA_NAME = config["prokka_extended_rules"]['prokka_name'],
-        threads = config["prokka_extended_rules"]["threads"]
+        threads = config["prokka_extended_rules"]["threads"],
+        locustag = lambda wildcards: locustag_for_sample(wildcards, "PROKKA_MOD", config)
     run:
         regex = re.compile('\.(\w*)')
         outdir = "annotation/prokka_extended/prokka_output/{wildcards.sample}"
         shell("""{{config[prokka_extended_rules][load_env]}}
-                {{params.PROKKA_NAME}} --cpus 16 {{input}} --outdir {0} {{params.PROKKA_OPS}} --force --norrna --notrna --prefix PROKKA""".format(outdir))
+                {{params.PROKKA_NAME}} --cpus 16 {{input}} --outdir {0} {{params.PROKKA_OPS}} --force --norrna --notrna --prefix PROKKA --locustag {{params.locustag}}""".format(outdir))
 
 
 
