@@ -23,7 +23,7 @@ rule prokka_extended_run:
     run:
         regex = re.compile('\.(\w*)')
         outdir = "annotation/prokka_extended/prokka_output/{wildcards.sample}"
-        if locustag == "PROKKA_MOD":
+        if params.locustag == "PROKKA_MOD":
             Warning("Locustag for sample {} is PROKKA_MOD, if this sample is a part of a bigger dataset, consider using a unique locustag".format(wildcards.sample))
 
         shell("""{{config[prokka_extended_rules][load_env]}}
