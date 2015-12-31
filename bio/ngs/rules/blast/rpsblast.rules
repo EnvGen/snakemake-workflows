@@ -1,10 +1,17 @@
+def find_aa_file(wildcards, config, default):
+    try:
+        return config["rpsblast_rules"]["query_aas"][wildcards.protein_aa]
+    except KeyError:
+        return default
+
 rule rpsblast_run:
     """
     Uses GNU Parallel to run query sequence against given database with given
     rpsblast parameters.
     """
     input:
-        aa=lambda wildcards: config["rpsblast_rules"]["query_aas"][wildcards.protein_aa]
+        aa=lambda wildcards: find_aa_file(wildcards, config, 
+            "annotation/prokka_extended/prokka_output/{0}/PROKKA.faa".format(wildcards.protein_aa))
     output:
         rps_out="blast/rpsblast/{parameters}/{db}/{protein_aa}/rpsblast.out"
     params:

@@ -43,8 +43,11 @@ rule prokka_extended_run_rpsblast:
 
 # This one is a bit tricky, it needs to be run in serial
 rule prokka_extended_output:
-    input: blast_output = ["annotation/prokka_extended/rpsblast/{{sample}}/PROKKA_{0}.out".format(db) for db in config["prokka_extended_rules"]["dbs"]],
-           ext_file = "annotation/prokka_extended/prokka_output/{sample}/PROKKA.{ext}"
+    input: 
+        blast_output = expand("blast/rpsblast/{parameters}/{db}/{{sample}}/rpsblast.out",
+            db = config["prokka_extended_rules"]["dbs"],
+            parameters = config["prokka_extended_rules"]["rpsblast_parameter_set"]),
+        ext_file = "annotation/prokka_extended/prokka_output/{sample}/PROKKA.{ext}"
     output: "annotation/prokka_extended/prokka_extended/{sample}/PROKKA.all.{ext}"
     params:
         cddid_all = config["prokka_extended_rules"]["cddid_all"]
@@ -53,7 +56,7 @@ rule prokka_extended_output:
         cmds = ["{config[prokka_extended_rules][load_env]} && mkdir -p prokka_extended"]
         ext = wildcards.ext
         extend_bin = config["prokka_extended_rules"]["EXTEND"][ext]
-        db_regex = re.compile('PROKKA_(\w*).out')
+        db_regex = re.compile('/(\w*)/[^/]*/rpsblast.out')
         for blast_file in input.blast_output:
             db = db_regex.findall(blast_file)[0]
             output_ext = input_ext.replace(".{0}".format(ext), '.{0}.{1}'.format(db, ext))
