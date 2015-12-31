@@ -31,16 +31,6 @@ rule prokka_extended_run:
 
 
 
-rule prokka_extended_run_rpsblast:
-    input: "annotation/prokka_extended/prokka_output/{{sample}}/PROKKA.{0}".format('faa')
-    output: "annotation/prokka_extended/rpsblast/{sample}/PROKKA_{db}.out"
-    run:
-        db_cap_name = wildcards.db.capitalize()
-        outdir = "rpsblast/{0}".format(wildcards.sample)
-        shell("""{config[prokka_extended_rules][load_env]} && mkdir -p {outdir} && rpsblast -num_threads 4 -outfmt "6 qseqid sseqid evalue pident score qstart qend sstart send length slen" -max_target_seqs 1 -evalue 0.00001 -query {input} -db '/proj/b2010008/nobackup/database/{db_cap_name}_uppnex/{db_cap_name}' -out {output}""")
-
-
-
 # This one is a bit tricky, it needs to be run in serial
 rule prokka_extended_output:
     input: 
