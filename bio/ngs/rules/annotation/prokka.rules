@@ -100,3 +100,19 @@ rule prokka_extended_merge_annotated_sequences_all:
     input: 
         expand("annotation/prokka_extended/all_annotated_sequences/{sample_set}/PROKKA.ffn", 
             sample_set=config["prokka_extended_rules"]["merging_sample_sets"])
+
+rule prokka_extended_gff_to_bed:
+    input: "annotation/prokka_extended/prokka_output/{sample}/PROKKA.gff"
+    output: "annotation/prokka_extended/prokka_output/{sample}/PROKKA.bed"
+    params:
+        gff_to_bed_script = config["prokka_extended_rules"]["gff_to_bed_script"]
+    shell:
+        """{params.gff_to_bed_script} {input} > {output}"""
+
+rule prokka_extended_merge_bed:
+    input: lambda wildcards: expand("annotation/prokka_extended/prokka_output/{sample}/PROKKA.bed", sample=config["prokka_extended_rules"]["merging_sample_sets"][wildcards.sample_set])
+    output:
+        "annotation/prokka_extended/all_genes_as_bed/{sample_set}/PROKKA.bed"
+    shell:
+        """cat {input} > {output}"""
+
