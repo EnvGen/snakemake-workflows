@@ -184,12 +184,12 @@ rule sample_merge_no_rmdup:
     """
     input:
         lambda wildcards: expand(
-            "mapping/bowtie2/{mapping_params}/{reference}/units/{unit}.sorted.bam",
+            "mapping/bowtie2/{mapping_params}/{reference}/units/{unit}.bam",
             unit=config["bowtie2_rules"]["samples"][wildcards.sample],
             mapping_params=wildcards.mapping_params,
             reference=wildcards.reference)
     output:
-        "mapping/bowtie2/{mapping_params}/{reference}/samples/{sample}.sorted.bam"
+        "mapping/bowtie2/{mapping_params}/{reference}/samples/{sample}.bam"
     run:
         if len(input) > 1:
             shell("{config[samtools_rules][load_env]} && "
