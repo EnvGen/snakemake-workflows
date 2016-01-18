@@ -8,7 +8,7 @@ rule prokka_extended_run:
     input: 
         lambda wildcards: config["prokka_extended_rules"]["contigs"][wildcards.sample]
     output: 
-        ["annotation/prokka_extended/prokka_output/{{sample}}/PROKKA.{0}".format(ext) for ext in ['gff', 'faa']]
+        ["annotation/prokka_extended/prokka_output/{{sample}}/PROKKA.{0}".format(ext) for ext in ['gff', 'faa', 'ffn']]
     params:
         PROKKA_OPS = config["prokka_extended_rules"]['prokka_ops'],
         PROKKA_NAME = config["prokka_extended_rules"]['prokka_name'],
@@ -79,3 +79,24 @@ rule prokka_extended_collate_annotations:
 
 rule prokka_extended_summarize_all:
     input: expand("annotation/prokka_extended/summary_table/all.{type}.tsv", type=[db.upper() for db in config["prokka_extended_rules"]["dbs"]])
+
+rule prokka_extended_rename_before_merge_annotated_sequences:
+    input: "annotation/prokka_extended/prokka_output/{sample}/PROKKA.ffn" 
+    output: "annotation/prokka_extended/prokka_output/{sample}/PROKKA_renamed.ffn"
+    params:
+        rename_script = config["prokka_extended_rules"]["rename_fasta_script"]
+    shell:
+       """{config[prokka_extended_rules][load_env]}
+            python {params.rename_script} {input} -s {wildcards.sample} > {output}
+       """
+
+rule prokka_extended_merge_annotated_sequences:
+    input: lambda wildcards: expand("annotation/prokka_extended/prokka_output/{sample}/PROKKA_renamed.ffn", sample=config["prokka_extended_rules"]["merging_sample_sets"][wildcards.sample_set])
+    output: "annotation/prokka_extended/all_annotated_sequences/{sample_set}/PROKKA.ffn"
+    shell:
+        """cat {input} > {output}"""
+
+rule prokka_extended_merge_annotated_sequences_all:
+    input: 
+        expand("annotation/prokka_extended/all_annotated_sequences/{sample_set}/PROKKA.ffn", 
+            sample_set=config["prokka_extended_rules"]["merging_sample_sets"])
