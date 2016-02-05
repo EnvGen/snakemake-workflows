@@ -175,7 +175,7 @@ rule sample_merge:
             shell("ln -fs ../units/{basename} {{output}} && touch -h "
                   "{{output}}".format(basename=os.path.basename(input[0])))
 
-
+ruleorder: remove_mark_duplicates > sample_merge
 
 rule sample_merge_no_rmdup:
     """

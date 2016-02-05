@@ -43,34 +43,69 @@ rule bowtie2_quant_genes:
         {params.coverage_for_genes} {input.histogram} > {output.coverage}
         """
 
-rule bowtie2_quant:
+
+rule bowtie2_quant_coverage_table:
     input:
         asm=lambda wildcards: config["bowtie2_quant_rules"]["references"][wildcards.reference],
         bedcovs=expand(("mapping/{mapper}/{mapping_params}/{{reference}}/samples/"
-                        "{{sample}}.sorted.removeduplicates.coverage.tsv"),
+                        "{sample}.sorted.removeduplicates.coverage.tsv"),
+                   sample=config["bowtie2_quant_rules"]["samples"],
                    mapper=config["bowtie2_quant_rules"]["mapper"],
                    mapping_params=config["bowtie2_quant_rules"]["mapping_params"])
     output:
-        "quantification/bowtie2/{reference}/{sample}/avg_cov.tsv",
+        "quantification/bowtie2/{reference}/avg_cov.tsv",
+    params:
+        sample_names=sorted(config["bowtie2_quant_rules"]["samples"])
     shell:
         """
         {config[bowtie2_quant_rules][load_env]}
         python {config[bowtie2_quant_rules][scripts_dir]}/gen_input_table.py --isbedfiles \
-            --samplenames <(echo {wildcards.sample}) \
+            --samplenames <(for sample in {params.sample_names}; do echo $sample; done) \
                 {input.asm} {input.bedcovs} \
                 > {output}
         """
 
+rule bowtie2_quant_coverage_table_all:
+    input: 
+        expand("quantification/bowtie2/{reference}/avg_cov.tsv",
+            reference=config["bowtie2_quant_rules"]["references"])
 
-rule bowtie2_quant_all:
+rule bowtie2_rpkm_gene_table:
     input:
-        expand("quantification/bowtie2/{reference}/{sample}/avg_cov.tsv", 
-            reference=config["bowtie2_quant_rules"]["references"],
-            sample=config["bowtie2_quant_rules"]["samples"])
+        coverage = expand("quantification/bowtie2_genes/{{mapping_params}}/{{split_ref_set}}/{sample}/avg_cov.tsv", sample = config["bowtie2_quant_rules"]["samples"]),
+        sample_info = "quantification/bowtie2_genes/sample_info.tsv"
+    output:
+        "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/rpkm_table.tsv"
+    run:
+        sample_names = ["/".join([os.path.dirname(fn).split('/')[-1]]) for fn in input.coverage]
+        shell("""{config[bowtie2_quant_rules][load_env]}
+            python {config[bowtie2_quant_rules][rpkm_table_script]} \
+                --sample_names {sample_names} \
+                --coverage_files {input.coverage} \
+                --sample_info {input.sample_info} > {output}
+        """)
 
-rule bowtie2_quant_genes_all:
+rule bowtie2_quant_coverage_annotation_table:
     input:
-        expand("quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/{sample}/avg_cov.tsv",
+        rpkm_table = "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/rpkm_table.tsv",
+        annotation_table = "annotation/prokka_extended/summary_annotation/{type}.tsv"
+    output:
+        "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/annotations/{type}.tsv"
+    params:
+        rpkm_annotations_table_script = config["bowtie2_quant_rules"]["rpkm_annotations_table_script"]
+    shell:
+        """{config[bowtie2_quant_rules][load_env]}
+            python {params.rpkm_annotations_table_script} {input.rpkm_table} {input.annotation_table} > {output}
+        """
+
+rule bowtie2_quant_coverage_annotation_table_all:
+    input: expand("quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/annotations/{type}.tsv", \
+        mapping_params = config["bowtie2_quant_rules"]["mapping_params"], \
+        split_ref_set = config["bowtie2_quant_rules"]["split_ref_sets"], \
+        type = [db.upper() for db in config["prokka_extended_rules"]["dbs"]])
+
+rule bowtie2_quant_rpkm_gene_all:
+    input:
+        expand("quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/rpkm_table.tsv",
             mapping_params = config["bowtie2_quant_rules"]["mapping_params"],
-            split_ref_set = config["bowtie2_quant_rules"]["split_ref_sets"],
-            sample = config["bowtie2_quant_rules"]["samples"])
+            split_ref_set = config["bowtie2_quant_rules"]["split_ref_sets"])
