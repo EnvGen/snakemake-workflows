@@ -12,7 +12,7 @@ for cr in CONFIG_REQS:
 rule bowtie2_quant_genes_histogram:
     input:
         bam = lambda wildcards: ("mapping/bowtie2/{mapping_params}/{reference}"
-                     "/samples/{sample}.sorted.bam").format(
+                     "/samples/{sample}.sorted.removeduplicates.bam").format(
             mapping_params = wildcards.mapping_params,
             sample = wildcards.sample,            
             reference = \
