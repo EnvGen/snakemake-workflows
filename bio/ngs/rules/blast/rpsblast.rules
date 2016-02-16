@@ -23,7 +23,7 @@ rule rpsblast_run:
         {config[rpsblast_rules][load_env]}
         cat {input.aa} | \
         parallel {params.parallel_params} \
-            --pipe -k --recstart '>' --no-notice \
+            --pipe -k --block 100k --recstart '>' --no-notice \
             rpsblast "{params.rpsblast_params}" \
                 -query - \
                 -db {params.db} \
