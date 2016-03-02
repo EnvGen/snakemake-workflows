@@ -25,7 +25,7 @@ rule bowtie2_quant_genes_histogram:
     shell:
         """
         {config[bowtie2_quant_rules][load_env]}
-        bedtools coverage -hist -a {input.bed} -b {input.bam} > {output.histogram}
+        bedtools coverage -sorted -hist -a {input.bed} -b {input.bam} > {output.histogram}
         """
 
 rule bowtie2_quant_genes:
