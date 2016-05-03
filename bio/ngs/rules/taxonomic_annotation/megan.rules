@@ -1,0 +1,51 @@
+rule taxonomy_annotation_diamond_search:
+    input:
+        protein_fasta = "annotation/prokka_extended/prokka_output/{sample}/PROKKA.faa"
+    output:
+        daa_output = "taxonomy_annotation/diamond/{db}/{sample}/search_result.daa" 
+    params:
+        db = config['taxonomy_annotation']['diamond']['databases'][wildcards.db]
+    shell: 
+        "diamond blastp --threads 16 --query {input.protein_fasta} --db {params.db} --daa {output.daa_output}"
+
+rule taxonomy_annotation_diamond_view_to_tab:
+    input:
+        "taxonomy_annotation/diamond/{db}/{sample}/search_result.daa"
+    output:
+        "taxonomy_annotation/diamond/{db}/{sample}/search_result.tab"
+    shell:
+        "diamond view --outfmt tab --out {output} --daa {input}"
+
+megan_commands_template = """load taxGIFile='{tax_gi_file}';
+import blastFile='{search_result}' meganFile='{megan_output}' maxMatches=100 minScore=50.0 maxExpected={max_evalue} topPercent=10.0 minSupport=1 minComplexity=0.0 useMinimalCoverageHeuristic=false useSeed=false useCOG=false useKegg=false paired=false useIdentityFilter=false blastFormat=BlastTAB mapping='Taxonomy:GI_MAP=true';
+collapse rank='Species';
+select rank='Species';
+select nodes=all;
+export what=CSV format=readname_taxonpath separator=comma file={taxon_path_file};
+export what=CSV format=readname_taxonid separator=comma file={taxon_id_file};
+quit;"""
+
+rule taxonomy_annotation_megan_taxid_and_path:
+    input: 
+        search_result = "taxonomy_annotation/diamond/{db}/{sample}/search_result.tab"
+    output:
+        taxon_path_file = "taxonomy_annotation/megan/{db}/{sample}/taxon_path.txt",
+        taxon_id_file = "taxonomy_annotation/megan/{db}/{sample}/taxon_id.txt",
+        megan_rma_output = "taxonomy_annotation/megan/{db}/{sample}/megan_output.rma",
+        commands_file = "taxonomy_annotation/megan/{db}/{sample}/commands.txt"
+    params:
+        tax_gi_file = config['taxonomy_annotation']['megan']['tax_gi_file'],
+        e_value = config['taxonomy_annotation']['megan']['max_evalue'],
+        megan_licence_file = config['taxonomy_annotation']['megan']['license_file']
+    run:
+        commands_text = megan_commands_template.format(**{'tax_gi_file': params.tax_gi_file, 
+                                            'search_result': input.search_result,
+                                            'megan_output': output.megan_rma_output,
+                                            'max_evalue': params.e_value,
+                                            'taxon_path_file': output.taxon_path_file,
+                                            'taxon_id_file': output.taxon_id_file})
+        print(commands_text, file=output.commands_file) 
+        shell("{load_env} \n xvfb-run --auto-servernum --server-num=1 MEGAN -L {megan_license_file} -g -E -c {commands_file}".format(
+                **{'load_env': params.load_env,
+                   'megan_license_file': params.megan_license_file,
+                   'commands_file': params.commands_file})
