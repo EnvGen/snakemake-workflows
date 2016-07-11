@@ -9,15 +9,25 @@ for cr in CONFIG_REQS:
     if cr not in config["bowtie2_quant_rules"]:
         raise(Exception("{cr} not in bowtie2_quant_rules config file".format(cr=cr)))
 
+def histogram_bam_input(mapping_params, sample, reference):
+    if sample in config["bowtie2_quant_rules"]["rna_samples"]:
+        bam_ending = ".bam"
+    else:
+        bam_ending = ".removeduplicates.bam"
+
+    bam_unformatted_s = "mapping/bowtie2/{mapping_params}/{reference}/samples/{sample}.sorted{bam_ending}"
+    return bam_unformatted_s.format(
+                mapping_params = mapping_params,
+                sample = sample,            
+                reference = reference,
+                bam_ending = bam_ending)
+
 rule bowtie2_quant_genes_histogram:
     input:
-        bam = lambda wildcards: ("mapping/bowtie2/{mapping_params}/{reference}"
-                     "/samples/{sample}.sorted.removeduplicates.bam").format(
-            mapping_params = wildcards.mapping_params,
-            sample = wildcards.sample,            
-            reference = \
-                config["bowtie2_quant_rules"]["reference_for_ref_set"][wildcards.split_ref_set],
-                ),
+        bam = lambda wildcards: histogram_bam_input(
+                    wildcards.mapping_params, 
+                    wildcards.sample, 
+                    config["bowtie2_quant_rules"]["reference_for_ref_set"][wildcards.split_ref_set]),
         bed = "annotation/prokka_extended/all_genes_as_bed/{split_ref_set}/PROKKA.bed"
     output:
         histogram = ("quantification/bowtie2_genes/{mapping_params}/"
@@ -72,10 +82,14 @@ rule bowtie2_quant_coverage_table_all:
 
 rule bowtie2_rpkm_gene_table:
     input:
-        coverage = expand("quantification/bowtie2_genes/{{mapping_params}}/{{split_ref_set}}/{sample}/avg_cov.tsv", sample = config["bowtie2_quant_rules"]["samples"]),
+        coverage = lambda wildcards: expand("quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/{sample}/avg_cov.tsv", 
+            mapping_params = wildcards.mapping_params,
+            split_ref_set = wildcards.split_ref_set,
+            sample = config["bowtie2_quant_rules"]["sample_groups"][wildcards.sample_group]
+        ),
         sample_info = "quantification/bowtie2_genes/sample_info.tsv"
     output:
-        "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/rpkm_table.tsv"
+        "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/{sample_group}/rpkm_table.tsv"
     run:
         sample_names = ["/".join([os.path.dirname(fn).split('/')[-1]]) for fn in input.coverage]
         shell("""{config[bowtie2_quant_rules][load_env]}
@@ -85,12 +99,22 @@ rule bowtie2_rpkm_gene_table:
                 --sample_info {input.sample_info} > {output}
         """)
 
+
+rule bowtie2_quant_rpkm_gene_all:
+    input:
+        expand("quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/{sample_group}/rpkm_table.tsv",
+            mapping_params = config["bowtie2_quant_rules"]["mapping_params"], \
+            split_ref_set = config["bowtie2_quant_rules"]["split_ref_sets"], \
+            sample_group = config["bowtie2_quant_rules"]["sample_groups"]
+        )
+
+
 rule bowtie2_quant_coverage_annotation_table:
     input:
-        rpkm_table = "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/rpkm_table.tsv",
+        rpkm_table = "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/{sample_group}/rpkm_table.tsv",
         annotation_table = "annotation/prokka_extended/summary_annotation/{type}.tsv"
     output:
-        "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/annotations/{type}.tsv"
+        "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/annotations/{sample_group}/{type}.tsv"
     params:
         rpkm_annotations_table_script = config["bowtie2_quant_rules"]["rpkm_annotations_table_script"]
     shell:
@@ -99,13 +123,9 @@ rule bowtie2_quant_coverage_annotation_table:
         """
 
 rule bowtie2_quant_coverage_annotation_table_all:
-    input: expand("quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/annotations/{type}.tsv", \
+    input: expand("quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/annotations/{sample_group}/{type}.tsv", \
         mapping_params = config["bowtie2_quant_rules"]["mapping_params"], \
         split_ref_set = config["bowtie2_quant_rules"]["split_ref_sets"], \
-        type = [db.upper() for db in config["prokka_extended_rules"]["dbs"]])
+        type = [db.upper() for db in config["prokka_extended_rules"]["dbs"]], \
+        sample_group = config["bowtie2_quant_rules"]["sample_groups"])
 
-rule bowtie2_quant_rpkm_gene_all:
-    input:
-        expand("quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/rpkm_table.tsv",
-            mapping_params = config["bowtie2_quant_rules"]["mapping_params"],
-            split_ref_set = config["bowtie2_quant_rules"]["split_ref_sets"])
