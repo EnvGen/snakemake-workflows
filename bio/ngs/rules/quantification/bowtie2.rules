@@ -166,5 +166,5 @@ rule bowtie2_quant_coverage_annotation_table_all:
         split_ref_set = config["bowtie2_quant_rules"]["split_ref_sets"], \
         type = [db.upper() for db in config["prokka_extended_rules"]["dbs"]], \
         sample_group = config["bowtie2_quant_rules"]["sample_groups"], \
-        count_unit = config["bowtie2_quant_rules"]["count_unit"])
+        count_unit = config["bowtie2_quant_rules"]["count_units"])
 
