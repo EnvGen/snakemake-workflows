@@ -22,6 +22,22 @@ def histogram_bam_input(mapping_params, sample, reference):
                 reference = reference,
                 bam_ending = bam_ending)
 
+
+
+
+rule bowtie2_quant_genes_htseq_counts:
+    input:
+        bam = lambda wildcards: histogram_bam_input(
+                    wildcards.mapping_params, 
+                    wildcards.sample, 
+                    config["bowtie2_quant_rules"]["reference_for_ref_set"][wildcards.split_ref_set]),
+        gff2 = "annotation/prokka_extended/all_annotated_sequences/{split_ref_set}/PROKKA.all.gff2"
+    output:
+        htseq_counts = "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/{sample}/read_counts.htseq.tsv"
+    shell:
+        """
+        """
+
 rule bowtie2_quant_genes_histogram:
     input:
         bam = lambda wildcards: histogram_bam_input(
@@ -99,6 +115,27 @@ rule bowtie2_rpkm_gene_table:
                 --sample_info {input.sample_info} > {output}
         """)
 
+
+rule bowtie2_tpm_gene_table:
+    input:
+        counts = lambda wildcards: expand("quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/{sample}/read_counts.htseq.tsv", 
+            mapping_params = wildcards.mapping_params,
+            split_ref_set = wildcards.split_ref_set,
+            sample = config["bowtie2_quant_rules"]["sample_groups"][wildcards.sample_group]
+        ),
+        sample_info = "quantification/bowtie2_genes/sample_info.tsv",
+        gene_lengths = "annotation/prokka_extended/all_annotated_sequences/{split_ref_set}/gene_lengths.tsv"
+    output:
+        "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/{sample_group}/tpm_table.tsv"
+    run:
+        sample_names = ["/".join([os.path.dirname(fn).split('/')[-1]]) for fn in input.coverage]
+        shell("""{config[bowtie2_quant_rules][load_env]}
+            python {config[bowtie2_quant_rules][tpm_table_script]} \
+                --sample_names {sample_names} \
+                --coverage_files {input.coverage} \
+                --sample_info {input.sample_info} \
+                --gene_lengths {input.gene_lengths} > {output}
+        """)
 
 rule bowtie2_quant_rpkm_gene_all:
     input:
