@@ -23,8 +23,6 @@ def histogram_bam_input(mapping_params, sample, reference):
                 bam_ending = bam_ending)
 
 
-
-
 rule bowtie2_quant_genes_htseq_counts:
     input:
         bam = lambda wildcards: histogram_bam_input(
@@ -36,6 +34,8 @@ rule bowtie2_quant_genes_htseq_counts:
         htseq_counts = "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/{sample}/read_counts.htseq.tsv"
     shell:
         """
+            {config[bowtie2_quant_rules][load_env]}
+            htseq-count -f 'bam' -r 'name' -s 'no' -a 0 -t 'CDS' -i 'ID' -m 'union' {input.bam} {input.gff2} > {output}
         """
 
 rule bowtie2_quant_genes_histogram:
@@ -139,30 +139,32 @@ rule bowtie2_tpm_gene_table:
 
 rule bowtie2_quant_rpkm_gene_all:
     input:
-        expand("quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/{sample_group}/rpkm_table.tsv",
+        expand("quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/{sample_group}/{count_unit}_table.tsv",
             mapping_params = config["bowtie2_quant_rules"]["mapping_params"], \
             split_ref_set = config["bowtie2_quant_rules"]["split_ref_sets"], \
-            sample_group = config["bowtie2_quant_rules"]["sample_groups"]
+            sample_group = config["bowtie2_quant_rules"]["sample_groups"], \
+            count_unit = config["bowtie2_quant_rules"]["count_units"]
         )
 
 
 rule bowtie2_quant_coverage_annotation_table:
     input:
-        rpkm_table = "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/{sample_group}/rpkm_table.tsv",
+        counts_table = "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/{sample_group}/{count_unit}_table.tsv",
         annotation_table = "annotation/prokka_extended/summary_annotation/{type}.tsv"
     output:
-        "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/annotations/{sample_group}/{type}.tsv"
+        "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/annotations/{sample_group}/{type}.{count_unit}.tsv"
     params:
-        rpkm_annotations_table_script = config["bowtie2_quant_rules"]["rpkm_annotations_table_script"]
+        counts_annotations_table_script = config["bowtie2_quant_rules"]["rpkm_annotations_table_script"]
     shell:
         """{config[bowtie2_quant_rules][load_env]}
-            python {params.rpkm_annotations_table_script} {input.rpkm_table} {input.annotation_table} > {output}
+            python {params.rpkm_annotations_table_script} {input.counts_table} {input.annotation_table} > {output}
         """
 
 rule bowtie2_quant_coverage_annotation_table_all:
-    input: expand("quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/annotations/{sample_group}/{type}.tsv", \
+    input: expand("quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/annotations/{sample_group}/{type}.{count_unit}.tsv", \
         mapping_params = config["bowtie2_quant_rules"]["mapping_params"], \
         split_ref_set = config["bowtie2_quant_rules"]["split_ref_sets"], \
         type = [db.upper() for db in config["prokka_extended_rules"]["dbs"]], \
-        sample_group = config["bowtie2_quant_rules"]["sample_groups"])
+        sample_group = config["bowtie2_quant_rules"]["sample_groups"], \
+        count_unit = config["bowtie2_quant_rules"]["count_unit"]
 
