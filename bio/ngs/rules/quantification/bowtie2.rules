@@ -157,7 +157,7 @@ rule bowtie2_quant_coverage_annotation_table:
         counts_annotations_table_script = config["bowtie2_quant_rules"]["rpkm_annotations_table_script"]
     shell:
         """{config[bowtie2_quant_rules][load_env]}
-            python {params.rpkm_annotations_table_script} {input.counts_table} {input.annotation_table} > {output}
+            python {params.counts_annotations_table_script} {input.counts_table} {input.annotation_table} > {output}
         """
 
 rule bowtie2_quant_coverage_annotation_table_all:
