@@ -128,11 +128,11 @@ rule bowtie2_tpm_gene_table:
     output:
         "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/{sample_group}/tpm_table.tsv"
     run:
-        sample_names = ["/".join([os.path.dirname(fn).split('/')[-1]]) for fn in input.coverage]
+        sample_names = ["/".join([os.path.dirname(fn).split('/')[-1]]) for fn in input.counts]
         shell("""{config[bowtie2_quant_rules][load_env]}
             python {config[bowtie2_quant_rules][tpm_table_script]} \
                 --sample_names {sample_names} \
-                --coverage_files {input.coverage} \
+                --coverage_files {input.counts} \
                 --sample_info {input.sample_info} \
                 --gene_lengths {input.gene_lengths} > {output}
         """)
