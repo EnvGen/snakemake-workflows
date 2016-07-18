@@ -34,7 +34,7 @@ rule bowtie2_quant_genes_htseq_counts:
         htseq_counts = "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/{sample}/read_counts.htseq.tsv"
     shell:
         """
-            {config[bowtie2_quant_rules][load_env]}
+            {config[bowtie2_quant_rules][load_htseq_env]}
             htseq-count -f 'bam' -r 'name' -s 'no' -a 0 -t 'CDS' -i 'ID' -m 'union' {input.bam} {input.gff2} > {output}
         """
 
