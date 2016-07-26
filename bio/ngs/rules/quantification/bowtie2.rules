@@ -137,6 +137,26 @@ rule bowtie2_tpm_gene_table:
                 --gene_lengths {input.gene_lengths} > {output}
         """)
 
+
+rule bowtie2_raw_counts_gene_table:
+    input:
+        counts = lambda wildcards: expand("quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/{sample}/read_counts.htseq.tsv", 
+            mapping_params = wildcards.mapping_params,
+            split_ref_set = wildcards.split_ref_set,
+            sample = config["bowtie2_quant_rules"]["sample_groups"][wildcards.sample_group]
+        ),
+        gene_lengths = "annotation/prokka_extended/all_annotated_sequences/{split_ref_set}/gene_lengths.tsv"
+    output:
+        "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/{sample_group}/raw_counts_table.tsv"
+    run:
+        sample_names = ["/".join([os.path.dirname(fn).split('/')[-1]]) for fn in input.counts]
+        shell("""{config[bowtie2_quant_rules][load_env]}
+            python {config[bowtie2_quant_rules][raw_counts_table_script]} \
+                --sample_names {sample_names} \
+                --coverage_files {input.counts} \
+                --gene_lengths {input.gene_lengths} > {output}
+        """)
+
 rule bowtie2_quant_rpkm_gene_all:
     input:
         expand("quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/{sample_group}/{count_unit}_table.tsv",
