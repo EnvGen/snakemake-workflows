@@ -101,6 +101,19 @@ rule prokka_extended_collate_annotations:
 rule prokka_extended_summarize_all:
     input: expand("annotation/prokka_extended/summary_table/all.{type}.tsv", type=[db.upper() for db in config["prokka_extended_rules"]["dbs"]])
 
+rule prokka_summarize_cog_categories:
+    input: "annotation/prokka_extended/summary_per_sample/{sample}/{sample}.COG.tsv"
+    output: "annotation/prokka_extended/summary_per_sample/{sample}/COG_categories.tsv"
+    params:
+        cog_categories_data = config["prokka_extended_rules"]["cog_categories_data"],
+        cog_categories_script = config["prokka_extended_rules"]["cog_categories_script"]
+    shell:
+        """{config[prokka_extended_rules][load_env]}
+            python {params.cog_categories_script} {input} {params.cog_categories_data} > {output}"""
+
+rule prokka_summarize_cog_categories_all:
+    input: expand("annotation/prokka_extended/summary_per_sample/{sample}/COG_categories.tsv", sample=config["prokka_extended_rules"]["contigs"])
+
 
 rule prokka_extended_merge_annotated_sequences:
     input: lambda wildcards: expand("annotation/prokka_extended/prokka_output/{sample}/PROKKA.ffn", sample=config["prokka_extended_rules"]["merging_sample_sets"][wildcards.sample_set])
