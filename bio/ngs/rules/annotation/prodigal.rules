@@ -5,7 +5,8 @@ rule prodigal_run:
         asm=lambda wildcards: config["prodigal_rules"]["assemblies"][wildcards.assembly]
     output:
         aa="annotation/prodigal/{parameters}/{assembly}/proteins/proteins.faa",
-        gff="annotation/prodigal/{parameters}/{assembly}/proteins/proteins.gff"
+        gff="annotation/prodigal/{parameters}/{assembly}/proteins/proteins.gff",
+        ffn="annotation/prodigal/{parameters}/{assembly}/proteins/proteins.ffn"
     log:
         "annotation/prodigal/{parameters}/{assembly}/proteins/proteins.log"
     params:
@@ -16,6 +17,7 @@ rule prodigal_run:
         prodigal -i {input.asm} \
             -a {output.aa} \
             -f gff \
+            -d {output.ffn} \
             {params.prodigal_params} > {output.gff} \
             2> {log}
         """
