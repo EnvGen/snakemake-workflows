@@ -1,0 +1,56 @@
+import glob
+import os
+
+def all_samples():
+    return [d.split('/')[-1] for d in glob.glob("samples/*") if os.path.isdir(d)]
+
+def locustag_for_sample(wildcards, default, config):
+    try:
+        return config["prokka_extended_rules"]["locustags"][wildcards.sample]
+    except KeyError:
+        return default 
+
+rule prokka_extended_run:
+    input: 
+        lambda wildcards: config["prokka_extended_rules"]["contigs"][wildcards.sample]
+    output: 
+        ["annotation/prokka_extended/prokka_output/{{sample}}/PROKKA.{0}".format(ext) for ext in ['gff', 'faa', 'ffn']]
+    params:
+        PROKKA_OPS = config["prokka_extended_rules"]['prokka_ops'],
+        PROKKA_NAME = config["prokka_extended_rules"]['prokka_name'],
+        threads = config["prokka_extended_rules"]["threads"],
+        locustag = lambda wildcards: locustag_for_sample(wildcards, "PROKKA_MOD", config)
+    run:
+        regex = re.compile('\.(\w*)')
+        outdir = "annotation/prokka_extended/prokka_output/{wildcards.sample}"
+        if params.locustag == "PROKKA_MOD":
+            Warning("Locustag for sample {} is PROKKA_MOD, if this sample is a part of a bigger dataset, consider using a unique locustag".format(wildcards.sample))
+
+        shell("""{{config[prokka_extended_rules][load_env]}}
+                {{params.PROKKA_NAME}} --cpus 16 {{input}} --outdir {0} {{params.PROKKA_OPS}} --force --norrna --notrna --prefix PROKKA --locustag {{params.locustag}}""".format(outdir))
+
+rule run_eggnog:
+    input:
+        "annotation/prodigal/{parameters}/{assembly}/proteins/proteins.faa"
+    output:
+        tsv_out = "annotation/EggNOG/{parameters}/{assembly}/hmm_result.tsv",
+        report_out = "annotation/EggNOG/{parameters}/{assembly}/hmm_report.txt" 
+    params:
+        egg_nog_db = config["eggnog_rules"]["db_path"],
+        hmmscan_params = config["eggnog_rules"]["hmmscan_params"],
+        gnuparallel_params = config["eggnog_rules"]["gnuparallel_params"]
+    run: 
+        output_part_tsv = "{}.{{#}}.tsv".format(".".join(output.tsv_out.split('.')[:-1]))
+        output_part_txt = "{}.{{#}}.txt".format(".".join(output.report_out.split('.')[:-1]))
+        outdir = "/".join(output_part_tsv.split('/')[:-1])
+        shell("""{config[eggnog_rules][load_env]}; 
+        cat {input} | parallel -j 16 --pipe --cat -k --block 1m --recstart '>' --no-notice 'hmmscan --cpu 1 --tblout {output_part_tsv} {params.hmmscan_params} {params.egg_nog_db} {{}} > {output_part_txt}';
+        cd outdir;
+        head -n 3 hmm_result.1.tsv > {output.tsv_out};
+        cat <(ls hmm_result.*.tsv | sort -n -t '.' -n 2) | grep -v '^#' >> {output.tsv_out};
+        tail hmm_result.1.tsv >> {output.tsv_out}""")
+
+rule run_eggnog_all:
+    input: expand("annotation/EggNOG/{parameters}/{assembly}/hmm_result.tsv",
+            parameters=config["prodigal_rules"]["prodigal_params"],
+            assembly=config["prodigal_rules"]["assemblies"])
