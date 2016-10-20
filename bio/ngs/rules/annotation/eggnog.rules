@@ -44,7 +44,7 @@ rule run_eggnog:
         output_part_txt = "{}.{{#}}.txt".format(".".join(output.report_out.split('.')[:-1]))
         outdir = "/".join(output_part_tsv.split('/')[:-1])
         shell("""{config[eggnog_rules][load_env]}; 
-        cat {input} | parallel -j 16 --pipe --cat -k --block 1m --recstart '>' --no-notice 'hmmscan --cpu 1 --tblout {output_part_tsv} {params.hmmscan_params} {params.egg_nog_db} {{}} > {output_part_txt}';
+        cat {input} | parallel {params.gnuparallel_params} --pipe --cat -k --block 1m --recstart '>' --no-notice 'hmmscan --cpu 1 --tblout {output_part_tsv} {params.hmmscan_params} {params.egg_nog_db} {{}} > {output_part_txt}';
         cd outdir;
         head -n 3 hmm_result.1.tsv > {output.tsv_out};
         cat <(ls hmm_result.*.tsv | sort -n -t '.' -n 2) | grep -v '^#' >> {output.tsv_out};
