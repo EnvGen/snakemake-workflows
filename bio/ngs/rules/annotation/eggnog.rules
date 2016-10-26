@@ -2,22 +2,18 @@ rule run_eggnog:
     input:
         "annotation/prodigal/{parameters}/{assembly}/proteins/proteins.faa"
     output:
-        tsv_out = "annotation/EggNOG/{parameters}/{assembly}/hmm_result.tsv",
+        tsv = "annotation/EggNOG/{parameters}/{assembly}/hmm_result.tsv",
+        txt = "annotation/EggNOG/{parameters}/{assembly}/hmm_report.txt"
     params:
         egg_nog_db = config["eggnog_rules"]["db_path"],
-        hmmscan_params = config["eggnog_rules"]["hmmscan_params"],
-        gnuparallel_params = config["eggnog_rules"]["gnuparallel_params"]
+        hmmsearch_params = config["eggnog_rules"]["hmmsearch_params"]
     run: 
-        report_out = output.tsv_out.replace("report.tsv", "result.txt")
-        output_part_tsv = "{}.{{#}}.tsv".format(".".join(output.tsv_out.split('.')[:-1]))
-        output_part_txt = "{}.{{#}}.txt".format(".".join(report_out.split('.')[:-1]))
-        outdir = "/".join(output_part_tsv.split('/')[:-1])
-        shell("""{config[eggnog_rules][load_env]}; 
-        cat {input} | parallel {params.gnuparallel_params} --pipe --cat -k --recstart '>' --no-notice 'hmmscan --cpu 1 --tblout {output_part_tsv} {params.hmmscan_params} {params.egg_nog_db} {{}} > {output_part_txt}';
-        cd {outdir};
-        head -n 3 hmm_result.1.tsv > hmm_result.tsv;
-        cat <(ls hmm_result.*.tsv | sort -n -t '.' -n 2) | grep -v '^#' >> hmm_result.tsv;
-        tail hmm_result.1.tsv >> hmm_result.tsv""")
+        """{config[eggnog_rules][load_env]};
+           input_basename=`basename {input}`;
+           database_basename=`basename {params.egg_nog_db}`;
+           cp {params.egg_nog_db}.h3* $SNIC_TMP/;
+           cp {input} $SNIC_TMP/;
+           hmmsearch -o {output.txt} {params.hmmsearch_params} --tblout {output.tsv} $SNIC_TMP/$database_basename $SNIC_TMP/$input_basename""" 
 
 rule run_eggnog_all:
     input: expand("annotation/EggNOG/{parameters}/{assembly}/hmm_result.tsv", parameters=config["prodigal_rules"]["prodigal_params"], assembly=config["prodigal_rules"]["assemblies"])
