@@ -7,7 +7,7 @@ rule run_eggnog:
     params:
         egg_nog_db = config["eggnog_rules"]["db_path"],
         hmmsearch_params = config["eggnog_rules"]["hmmsearch_params"]
-    run: 
+    shell: 
         """{config[eggnog_rules][load_env]};
            input_basename=`basename {input}`;
            database_basename=`basename {params.egg_nog_db}`;
