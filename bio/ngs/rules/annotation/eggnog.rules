@@ -29,7 +29,7 @@ rule eggnog_filter_output:
     shell:
         """
         grep '^#' {input} > {output.header_comments};
-        grep -v '^#' {input} | awk '{if ($5 < {params.max_eval}) print}' > {output.filtered_output}
+        grep -v '^#' {input} | awk '{{if ($5 < {params.max_eval}) print}}' > {output.filtered_result}
         """
 
 rule eggnog_collate_annotations:
