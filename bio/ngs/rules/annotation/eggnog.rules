@@ -33,7 +33,7 @@ rule eggnog_filter_output:
         """
 
 rule eggnog_collate_annotations:
-   input:
+    input:
         expand("annotation/EggNOG/{parameters}/{assembly}/hmm_result.filtered.tsv", parameters=config["prodigal_rules"]["prodigal_params"], assembly=config["prodigal_rules"]["assemblies"])
     output:
         "annotation/EggNOG/summary_annotation/all.EggNOG.tsv"
