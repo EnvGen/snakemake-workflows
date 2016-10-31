@@ -17,3 +17,27 @@ rule run_eggnog:
 
 rule run_eggnog_all:
     input: expand("annotation/EggNOG/{parameters}/{assembly}/hmm_result.tsv", parameters=config["prodigal_rules"]["prodigal_params"], assembly=config["prodigal_rules"]["assemblies"])
+
+rule eggnog_filter_output:
+    input:
+        "annotation/EggNOG/{parameters}/{assembly}/hmm_result.tsv"
+    output:
+        filtered_result = "annotation/EggNOG/{parameters}/{assembly}/hmm_result.filtered.tsv",
+        header_comments = "annotation/EggNOG/{parameters}/{assembly}/hmm_result.filtered.head"
+    params:
+        "max_eval" = config["eggnog_rules"]["max_eval_first_filtering"]
+    shell:
+        """
+        grep '^#' {input} > {output.header_comments};
+        grep -v '^#' {input} | awk '{if ($5 < {params.max_eval}) print}' > {output.filtered_output}
+        """
+
+rule eggnog_collate_annotations:
+   input:
+        expand("annotation/EggNOG/{parameters}/{assembly}/hmm_result.filtered.tsv", parameters=config["prodigal_rules"]["prodigal_params"], assembly=config["prodigal_rules"]["assemblies"])
+    output:
+        "annotation/EggNOG/summary_annotation/all.EggNOG.tsv"
+    shell:
+        """
+            sort --merge --key=3,3 {input} > {output}
+        """
