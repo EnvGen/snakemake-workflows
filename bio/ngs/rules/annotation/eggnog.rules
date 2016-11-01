@@ -32,12 +32,35 @@ rule eggnog_filter_output:
         grep -v '^#' {input} | awk '{{if ($5 < {params.max_eval}) print}}' > {output.filtered_result}
         """
 
+rule eggnog_sort_on_score:
+    input:
+        "annotation/EggNOG/{parameters}/{assembly}/hmm_result.filtered.tsv"
+    output:
+        "annotation/EggNOG/{parameters}/{assembly}/hmm_result.filtered.score_sorted.tsv"
+    shell:
+        """
+            sort --numeric-sort --reverse --key=6,6 {input} | sed -e 's/\s\s*/\t/g' > {output}
+        """
+
+rule eggnog_keep_only_top_score:
+    input:
+        "annotation/EggNOG/{parameters}/{assembly}/hmm_result.filtered.score_sorted.tsv"
+    output:
+        "annotation/EggNOG/{parameters}/{assembly}/hmm_result.filtered.score_sorted.only_top.tsv"
+    params:
+        keep_top_score_script = config["eggnog_rules"]["keep_top_score_script"]
+    shell:
+        """{config[eggnog_rules][load_env]}
+           python {params.keep_top_score_script} {input} | sort --key=3,3 > {output} 
+        """
+
 rule eggnog_collate_annotations:
     input:
-        expand("annotation/EggNOG/{parameters}/{assembly}/hmm_result.filtered.tsv", parameters=config["prodigal_rules"]["prodigal_params"], assembly=config["prodigal_rules"]["assemblies"])
+        expand("annotation/EggNOG/{parameters}/{assembly}/hmm_result.filtered.score_sorted.only_top.tsv", parameters=config["prodigal_rules"]["prodigal_params"], assembly=config["prodigal_rules"]["assemblies"])
     output:
         "annotation/EggNOG/summary_annotation/all.EggNOG.tsv"
     shell:
         """
             sort --merge --key=3,3 {input} > {output}
         """
+
