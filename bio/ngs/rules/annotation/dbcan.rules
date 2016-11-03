@@ -19,3 +19,26 @@ rule run_dbcan:
 
 rule run_dbcan_all:
     input: expand("annotation/dbCAN/{parameters}/{assembly}/hmm_result.tsv", parameters=config["prodigal_rules"]["prodigal_params"], assembly=config["prodigal_rules"]["assemblies"])
+
+rule dbcan_filter_output:
+    input:
+        "annotation/dbCAN/{parameters}/{assembly}/hmm_result.dom.tsv"
+    output:
+        first = "annotation/dbCAN/{parameters}/{assembly}/hmm_result.dom.filtered.tsv",
+        final = "annotation/dbCAN/{parameters}/{assembly}/hmm_result.dom.hard_filtered.tsv"
+    params:
+        dbcan_parser_script = config["dbcan_rules"]["dbcan_parser_script"],
+        dbcan_strict_filtering_script = config["dbcan_rules"]["dbcan_strict_filtering_script"]
+    shell:
+        """{config[dbcan_rules][load_env]}
+        {params.dbcan_parser_script} {input} > {output.first}
+        python {params.dbcan_strict_filtering_script} {output.first} | sort --key=1,1 > {output.final}"""
+
+rule dbcan_collate_annotations:
+    input: expand("annotation/dbCAN/{parameters}/{assembly}/hmm_result.dom.hard_filtered.tsv", parameters=config["prodigal_rules"]["prodigal_params"], assembly=config["prodigal_rules"]["assemblies"])
+    output:
+        "annotation/dbCAN/summary_annotation/all.dbCAN.tsv"
+    shell:
+        """
+            sort --merge --key=1,1 {input} > {output}
+        """
