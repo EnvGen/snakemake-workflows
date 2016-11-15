@@ -1,0 +1,35 @@
+rule run_pfam:
+    input:
+        "annotation/prodigal/{parameters}/{assembly}/proteins/proteins.faa"
+    output:
+        tsv = "annotation/pfam/{parameters}/{assembly}/hmm_result.tsv"
+    params:
+        pfam_db = config["pfam_rules"]["db_path"]
+    shell: 
+        """{config[dbcan_rules][load_env]};
+           input_basename=`basename {input}`;
+           database_basename=`basename {params.pfam_db}`;
+           cp -r {params.pfam_db} $SNIC_TMP/;
+           cp {input} $SNIC_TMP/;
+           pfam_scan.pl -fasta $SNIC_TMP/$input_basename -dir $SNIC_TMP/$database_basename -outfile {output.tsv}
+        """
+
+rule pfam_sort_on_name:
+    input:
+        "annotation/pfam/{parameters}/{assembly}/hmm_result.tsv"
+    output:
+        "annotation/pfam/{parameters}/{assembly}/hmm_result.sorted.tsv"
+    shell:
+        """
+            grep -v '^#' {input} | tail -n+2 | sed 's/\s\s*/ /g' | sort -k 6,6 -k 1,1 > {output}
+        """
+
+
+rule pfam_collate_annotations:
+    input: expand("annotation/pfam/{parameters}/{assembly}/hmm_result.sorted.tsv", parameters=config["prodigal_rules"]["prodigal_params"], assembly=config["prodigal_rules"]["assemblies"])
+    output:
+        "annotation/pfam/summary_annotation/all.pfam.tsv"
+    shell:
+        """
+            sort --merge -k6,6 -k1,1 {input} > {output}
+        """
