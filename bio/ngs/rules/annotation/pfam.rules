@@ -6,7 +6,7 @@ rule run_pfam:
     params:
         pfam_db = config["pfam_rules"]["db_path"]
     shell: 
-        """{config[dbcan_rules][load_env]};
+        """{config[pfam_rules][load_env]};
            input_basename=`basename {input}`;
            database_basename=`basename {params.pfam_db}`;
            cp -r {params.pfam_db} $SNIC_TMP/;
