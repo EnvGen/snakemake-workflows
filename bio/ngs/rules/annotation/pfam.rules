@@ -31,5 +31,5 @@ rule pfam_collate_annotations:
         "annotation/pfam/summary_annotation/all.pfam.tsv"
     shell:
         """
-            sort --merge -k6,6 -k1,1 {input} > {output}
+            sort --merge -k6,6 -k1,1 {input} | sed 's/\s\s*/	/g' > {output}
         """
