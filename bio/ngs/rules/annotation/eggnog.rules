@@ -64,3 +64,13 @@ rule eggnog_collate_annotations:
             sort --merge --key=3,3 {input} > {output}
         """
 
+rule eggnog_standardize_collate_annotations:
+    input:
+        "annotation/EggNOG/summary_annotation/all.EggNOG.tsv"
+    output:
+        "annotation/EggNOG/summary_annotation/all.EggNOG.standardized.tsv"
+    shell:
+        """ 
+            awk '{{print $1,$3,$6,$5}}' {input} | tr ' ' '     ' > {output}
+        """
+
