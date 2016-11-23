@@ -1,10 +1,10 @@
 rule run_dbcan:
     input:
-        "annotation/prodigal/{parameters}/{assembly}/proteins/proteins.faa"
+        "annotation/{gene_prediction}/genes/{assembly}/proteins/proteins.faa"
     output:
-        tsv = "annotation/dbCAN/{parameters}/{assembly}/hmm_result.tsv",
-        dom_tsv = "annotation/dbCAN/{parameters}/{assembly}/hmm_result.dom.tsv",
-        txt = "annotation/dbCAN/{parameters}/{assembly}/hmm_report.txt"
+        tsv = "annotation/dbCAN/{gene_prediction}/{assembly}/hmm_result.tsv",
+        dom_tsv = "annotation/dbCAN/{gene_prediction}/{assembly}/hmm_result.dom.tsv",
+        txt = "annotation/dbCAN/{gene_prediction}/{assembly}/hmm_report.txt"
     params:
         dbcan_db = config["dbcan_rules"]["db_path"],
         hmmscan_params = config["dbcan_rules"]["hmmscan_params"]
@@ -17,15 +17,12 @@ rule run_dbcan:
            hmmscan {params.hmmscan_params} --domtblout {output.dom_tsv} --tblout {output.tsv} $SNIC_TMP/$database_basename $SNIC_TMP/$input_basename > {output.txt}
         """
 
-rule run_dbcan_all:
-    input: expand("annotation/dbCAN/{parameters}/{assembly}/hmm_result.tsv", parameters=config["prodigal_rules"]["prodigal_params"], assembly=config["prodigal_rules"]["assemblies"])
-
 rule dbcan_filter_output:
     input:
-        "annotation/dbCAN/{parameters}/{assembly}/hmm_result.dom.tsv"
+        "annotation/dbCAN/{gene_prediction}/{assembly}/hmm_result.dom.tsv"
     output:
-        first = "annotation/dbCAN/{parameters}/{assembly}/hmm_result.dom.filtered.tsv",
-        final = "annotation/dbCAN/{parameters}/{assembly}/hmm_result.dom.hard_filtered.tsv"
+        first = "annotation/dbCAN/{gene_prediction}/{assembly}/hmm_result.dom.filtered.tsv",
+        final = "annotation/dbCAN/{gene_prediction}/{assembly}/hmm_result.dom.hard_filtered.tsv"
     params:
         dbcan_parser_script = config["dbcan_rules"]["dbcan_parser_script"],
         dbcan_strict_filtering_script = config["dbcan_rules"]["dbcan_strict_filtering_script"]
@@ -34,10 +31,13 @@ rule dbcan_filter_output:
         {params.dbcan_parser_script} {input} > {output.first}
         python {params.dbcan_strict_filtering_script} {output.first} | sort --key=1,1 > {output.final}"""
 
+rule dbcan_annotate_all:
+    input: expand("annotation/dbCAN/{gene_prediction}/{assembly}/hmm_result.dom.hard_filtered.tsv", gene_prediction=config["annotation_rules"]["gene_prediction"], assembly=config["assemblies"])
+
 rule dbcan_collate_annotations:
-    input: expand("annotation/dbCAN/{parameters}/{assembly}/hmm_result.dom.hard_filtered.tsv", parameters=config["prodigal_rules"]["prodigal_params"], assembly=config["prodigal_rules"]["assemblies"])
+    input: lambda wildcards: expand("annotation/dbCAN/{gene_prediction}/{assembly}/hmm_result.dom.hard_filtered.tsv", gene_prediction=wildcards.gene_prediction, assembly=config["assemblies"])
     output:
-        "annotation/dbCAN/summary_annotation/all.dbCAN.tsv"
+        "annotation/dbCAN/summary_annotation/{gene_prediction}/all.dbCAN.tsv"
     shell:
         """
             sort --merge --key=1,1 {input} > {output}
@@ -45,10 +45,14 @@ rule dbcan_collate_annotations:
 
 rule dbcan_standardize_collate_annotations:
     input:
-        "annotation/dbCAN/summary_annotation/all.dbCAN.tsv"
+        "annotation/dbCAN/summary_annotation/{gene_prediction}/all.dbCAN.tsv"
     output:
-        "annotation/dbCAN/summary_annotation/all.dbCAN.standardized.tsv"
+        "annotation/dbCAN/summary_annotation/{gene_prediction}/all.dbCAN.standardized.tsv"
     shell:
         """ 
             awk '{{print $1,$3,$5,$6}}' {input} | tr ' ' '     ' > {output}
         """
+
+rule dbcan_collate_annotation_all:
+    input:
+        expand("annotation/dbCAN/summary_annotation/{gene_prediction}/all.dbCAN.standardized.tsv", gene_prediction=config["annotation_rules"]["gene_prediction"])

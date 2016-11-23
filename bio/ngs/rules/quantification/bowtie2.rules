@@ -171,7 +171,7 @@ rule bowtie2_quant_rpkm_gene_all:
 rule bowtie2_quant_coverage_annotation_table:
     input:
         counts_table = "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/{sample_group}/{count_unit}_table.tsv",
-        annotation_table = "annotation/{type}/summary_annotation/all.{type}.standardized.tsv"
+        annotation_table = lambda wildcards: expand("annotation/{type}/summary_annotation/{gene_prediction}/all.{type}.standardized.tsv", type=wildcards.type,gene_prediction=config["bowtie2_quant_rules"]["gene_prediction"]) 
     output:
         "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/annotations/{sample_group}/{type}.{count_unit}.tsv"
     params:

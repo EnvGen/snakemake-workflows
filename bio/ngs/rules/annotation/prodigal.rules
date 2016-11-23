@@ -2,13 +2,13 @@ from snakemake.exceptions import MissingInputException
 
 rule prodigal_run:
     input:
-        asm=lambda wildcards: config["prodigal_rules"]["assemblies"][wildcards.assembly]
+        asm=lambda wildcards: config["assemblies"][wildcards.assembly]
     output:
-        aa="annotation/prodigal/{parameters}/{assembly}/proteins/proteins.faa",
-        gff="annotation/prodigal/{parameters}/{assembly}/proteins/proteins.gff",
-        ffn="annotation/prodigal/{parameters}/{assembly}/proteins/proteins.ffn"
+        aa="annotation/prodigal_{parameters}/genes/{assembly}/proteins/proteins.faa",
+        gff="annotation/prodigal_{parameters}/genes/{assembly}/proteins/proteins.gff",
+        ffn="annotation/prodigal_{parameters}/genes/{assembly}/proteins/proteins.ffn"
     log:
-        "annotation/prodigal/{parameters}/{assembly}/proteins/proteins.log"
+        "annotation/prodigal_{parameters}/genes/{assembly}/proteins/proteins.log"
     params:
         prodigal_params=lambda wildcards: config["prodigal_rules"]["prodigal_params"][wildcards.parameters]
     shell:
@@ -24,40 +24,40 @@ rule prodigal_run:
 
 rule prodigal_run_all:
     input:
-        protein_aas=expand("annotation/prodigal/{parameters}/{assembly}/proteins/proteins.faa",
+        protein_aas=expand("annotation/prodigal_{parameters}/genes/{assembly}/proteins/proteins.faa",
             parameters=config["prodigal_rules"]["prodigal_params"],
-            assembly=config["prodigal_rules"]["assemblies"]),
-        protein_gffs=expand("annotation/prodigal/{parameters}/{assembly}/proteins/proteins.gff",
+            assembly=config["assemblies"]),
+        protein_gffs=expand("annotation/prodigal_{parameters}/genes/{assembly}/proteins/proteins.gff",
             parameters=config["prodigal_rules"]["prodigal_params"],
-            assembly=config["prodigal_rules"]["assemblies"])
+            assembly=config["assemblies"])
 
 
 # Will only work for gff3 without fasta part in the end
 rule prodigal_gff_to_gff2:
     input:
-        "annotation/prodigal/{parameters}/{assembly}/proteins/proteins.gff"
+        "annotation/prodigal_{parameters}/genes/{assembly}/proteins/proteins.gff"
     output:
-        "annotation/prodigal/{parameters}/{assembly}/proteins/proteins.gff2"
+        "annotation/prodigal_{parameters}/genes/{assembly}/proteins/proteins.gff2"
     shell: 
         """grep -v '^#' {input} > {output}
         """
 
 rule prodigal_merge_all_gff2:
     input: 
-        lambda wildcards: expand("annotation/prodigal/{parameters}/{assembly}/proteins/proteins.gff2", 
+        lambda wildcards: expand("annotation/prodigal_{parameters}/genes/{assembly}/proteins/proteins.gff2", 
         parameters=wildcards.parameters,
         assembly=config["prodigal_rules"]["merging_sample_sets"][wildcards.sample_set])
     output:
-        "annotation/prodigal/all_annotated_sequences/{parameters}/{sample_set}/proteins.gff2"
+        "annotation/prodigal_{parameters}/all_annotated_sequences/{parameters}/{sample_set}/proteins.gff2"
     shell:
         """for gff3_file in {input}; do cat $gff3_file >> {output}; done
         """
 
 rule prodigal_gene_lengths:
     input:
-        "annotation/prodigal/all_annotated_sequences/{parameters}/{sample_set}/proteins.gff2"
+        "annotation/prodigal_{parameters}/all_annotated_sequences/{parameters}/{sample_set}/proteins.gff2"
     output:
-        "annotation/prodigal/all_annotated_sequences/{parameters}/{sample_set}/gene_lengths.tsv"
+        "annotation/prodigal_{parameters}/all_annotated_sequences/{parameters}/{sample_set}/gene_lengths.tsv"
     params:
         length_script = config["prodigal_rules"]["length_script"]
     shell: 

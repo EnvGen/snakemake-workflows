@@ -1,8 +1,8 @@
 rule run_pfam:
     input:
-        "annotation/prodigal/{parameters}/{assembly}/proteins/proteins.faa"
+        "annotation/{gene_prediction}/genes/{assembly}/proteins/proteins.faa"
     output:
-        tsv = "annotation/pfam/{parameters}/{assembly}/hmm_result.tsv"
+        tsv = "annotation/pfam/{gene_prediction}/{assembly}/hmm_result.tsv"
     params:
         pfam_db = config["pfam_rules"]["db_path"]
     shell: 
@@ -16,9 +16,9 @@ rule run_pfam:
 
 rule pfam_sort_on_name:
     input:
-        "annotation/pfam/{parameters}/{assembly}/hmm_result.tsv"
+        "annotation/pfam/{gene_prediction}/{assembly}/hmm_result.tsv"
     output:
-        "annotation/pfam/{parameters}/{assembly}/hmm_result.sorted.tsv"
+        "annotation/pfam/{gene_prediction}/{assembly}/hmm_result.sorted.tsv"
     shell:
         """
             grep -v '^#' {input} | tail -n+2 | sed 's/\s\s*/ /g' | sort -k 6,6 -k 1,1 > {output}
@@ -26,9 +26,9 @@ rule pfam_sort_on_name:
 
 
 rule pfam_collate_annotations:
-    input: expand("annotation/pfam/{parameters}/{assembly}/hmm_result.sorted.tsv", parameters=config["prodigal_rules"]["prodigal_params"], assembly=config["prodigal_rules"]["assemblies"])
+    input: lambda wildcards: expand("annotation/pfam/{gene_prediction}/{assembly}/hmm_result.sorted.tsv", gene_prediction=wildcards.gene_prediction,  assembly=config["assemblies"])
     output:
-        "annotation/pfam/summary_annotation/all.pfam.tsv"
+        "annotation/pfam/summary_annotation/{gene_prediction}/all.pfam.tsv"
     shell:
         """
             sort --merge -k6,6 -k1,1 {input} | sed 's/\s\s*/	/g' > {output}
@@ -36,10 +36,14 @@ rule pfam_collate_annotations:
 
 rule pfam_standardize_collated_annotation:
     input:
-        "annotation/pfam/summary_annotation/all.pfam.tsv"
+        "annotation/pfam/summary_annotation/{gene_prediction}/all.pfam.tsv"
     output:
-        "annotation/pfam/summary_annotation/all.pfam.standardized.tsv"
+        "annotation/pfam/summary_annotation/{gene_prediction}/all.pfam.standardized.tsv"
     shell:
         """
             awk '{{print $1,$6,$13,$12}}' {input} > {output} 
         """
+
+rule pfam_collate_annotation_all:
+    input:
+        expand("annotation/pfam/summary_annotation/{gene_prediction}/all.pfam.standardized.tsv", gene_prediction=config["annotation_rules"]["gene_prediction"])
