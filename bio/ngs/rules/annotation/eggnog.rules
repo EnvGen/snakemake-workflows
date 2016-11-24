@@ -73,7 +73,7 @@ rule eggnog_standardize_collate_annotations:
         "annotation/EggNOG/summary_annotation/{gene_prediction}/all.EggNOG.standardized.tsv"
     shell:
         """ 
-            awk '{{print $1,$3,$6,$5}}' {input} | tr ' ' '     ' > {output}
+            awk '{{print $1,$3,$6,$5}}' {input} | tr ' ' '\t' > {output}
         """
 
 rule eggnog_collate_annotation_all:
