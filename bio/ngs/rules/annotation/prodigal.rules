@@ -48,16 +48,16 @@ rule prodigal_merge_all_gff2:
         parameters=wildcards.parameters,
         assembly=config["prodigal_rules"]["merging_sample_sets"][wildcards.sample_set])
     output:
-        "annotation/prodigal_{parameters}/all_annotated_sequences/{parameters}/{sample_set}/proteins.gff2"
+        "annotation/prodigal_{parameters}/all_annotated_sequences/{sample_set}/proteins.gff2"
     shell:
         """for gff3_file in {input}; do cat $gff3_file >> {output}; done
         """
 
 rule prodigal_gene_lengths:
     input:
-        "annotation/prodigal_{parameters}/all_annotated_sequences/{parameters}/{sample_set}/proteins.gff2"
+        "annotation/prodigal_{parameters}/all_annotated_sequences/{sample_set}/proteins.gff2"
     output:
-        "annotation/prodigal_{parameters}/all_annotated_sequences/{parameters}/{sample_set}/gene_lengths.tsv"
+        "annotation/prodigal_{parameters}/all_annotated_sequences/{sample_set}/gene_lengths.tsv"
     params:
         length_script = config["prodigal_rules"]["length_script"]
     shell: 

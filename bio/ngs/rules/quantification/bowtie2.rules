@@ -124,7 +124,7 @@ rule bowtie2_tpm_gene_table:
             sample = config["bowtie2_quant_rules"]["sample_groups"][wildcards.sample_group]
         ),
         sample_info = "quantification/bowtie2_genes/sample_info.tsv",
-        gene_lengths = "annotation/prodigal/all_annotated_sequences/{split_ref_set}/gene_lengths.tsv"
+        gene_lengths = lambda wildcards: "annotation/{gene_prediction}/all_annotated_sequences/{split_ref_set}/gene_lengths.tsv".format(gene_prediction = config["bowtie2_quant_rules"]["gene_prediction"], split_ref_set = wildcards.split_ref_set) 
     output:
         "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/{sample_group}/tpm_table.tsv"
     run:
@@ -146,7 +146,7 @@ rule bowtie2_raw_counts_gene_table:
             split_ref_set = wildcards.split_ref_set,
             sample = config["bowtie2_quant_rules"]["sample_groups"][wildcards.sample_group]
         ),
-        gene_lengths = "annotation/prodigal/all_annotated_sequences/{split_ref_set}/gene_lengths.tsv"
+        gene_lengths = lambda wildcards: "annotation/{gene_prediction}/all_annotated_sequences/{split_ref_set}/gene_lengths.tsv".format(gene_prediction = config["bowtie2_quant_rules"]["gene_prediction"], split_ref_set = wildcards.split_ref_set) 
     output:
         "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/{sample_group}/raw_counts_table.tsv"
     run:
