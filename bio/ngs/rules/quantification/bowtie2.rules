@@ -29,7 +29,7 @@ rule bowtie2_quant_genes_htseq_counts:
                     wildcards.mapping_params, 
                     wildcards.sample, 
                     config["bowtie2_quant_rules"]["reference_for_ref_set"][wildcards.split_ref_set]),
-        gff2 = lambda wildcards: "annotation/prodigal/all_annotated_sequences/{parameters}/{split_ref_set}/proteins.gff2".format(parameters=config["bowtie2_quant_rules"]["prodigal_parameters_used"], split_ref_set=wildcards.split_ref_set)
+        gff2 = lambda wildcards: "annotation/{gene_prediction}/all_annotated_sequences/{split_ref_set}/proteins.gff2".format(gene_prediction=config["bowtie2_quant_rules"]["gene_prediction"], split_ref_set=wildcards.split_ref_set)
     output:
         htseq_counts = "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/{sample}/read_counts.htseq.tsv"
     shell:
