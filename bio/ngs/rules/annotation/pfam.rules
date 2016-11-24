@@ -34,7 +34,7 @@ rule pfam_collate_annotations:
             sort --merge -k6,6 -k1,1 {input} | sed 's/\s\s*/	/g' > {output}
         """
 
-rule pfam_standardize_collate_annotation:
+rule pfam_standardize_collate_annotations:
     input:
         "annotation/pfam/summary_annotation/{gene_prediction}/all.pfam.tsv"
     output:
