@@ -134,7 +134,6 @@ rule bowtie2_tpm_gene_table:
                 --sample_names {sample_names} \
                 --coverage_files {input.counts} \
                 --sample_info {input.sample_info} \
-include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/quantification/bowtie2.rules")
                 --gene_lengths {input.gene_lengths} > {output}
         """)
 
