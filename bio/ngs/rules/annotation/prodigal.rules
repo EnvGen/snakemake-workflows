@@ -58,10 +58,7 @@ rule prodigal_gene_lengths:
         "annotation/prodigal_{parameters}/all_annotated_sequences/{sample_set}/proteins.gff2"
     output:
         "annotation/prodigal_{parameters}/all_annotated_sequences/{sample_set}/gene_lengths.tsv"
-    params:
-        length_script = config["prodigal_rules"]["length_script"]
     shell: 
         """
-        {config[prodigal_rules][load_env]}
-        python {params.length_script} --input_fasta {input} > {output}
+            cat {input} | cut -f4,5,9 | sed 's/ID=\(\w*\);.*/\1/g' | gawk '{{print $3,$2-$1+1}}' | tr ' ' '\t' > {output}
         """
