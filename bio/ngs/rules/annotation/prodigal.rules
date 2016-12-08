@@ -60,5 +60,5 @@ rule prodigal_gene_lengths:
         "annotation/prodigal_{parameters}/all_annotated_sequences/{sample_set}/gene_lengths.tsv"
     shell: 
         """
-            cat {input} | cut -f4,5,9 | sed 's/ID=\(\w*\);.*/\1/g' | gawk '{{print $3,$2-$1+1}}' | tr ' ' '\t' > {output}
+            cat {input} | cut -f4,5,9 | sed 's/ID=\(\w*\);.*/\\1/g' | gawk '{{print $3,$2-$1+1}}' | tr ' ' '\t' > {output}
         """
