@@ -37,14 +37,14 @@ rule prodigal_gff_to_gff2:
     input:
         "annotation/prodigal_{parameters}/genes/{assembly}/proteins/proteins.gff"
     output:
-        "annotation/prodigal_{parameters}/genes/{assembly}/proteins/proteins.gff2"
-    shell: 
-        """grep -v '^#' {input} > {output}
-        """
+        "annotation/prodigal_{parameters}/genes/{assembly}/proteins/proteins.renamed.gff2"
+    run: 
+        assembly_code = "PART{}_".format(wildcards.assembly.split(".")[-1])
+        shell("""grep -v '^#' {input} | sed 's/ID=\(\w*\);/ID={assembly_code}\\1;/g' > {output}""")
 
 rule prodigal_merge_all_gff2:
     input: 
-        lambda wildcards: expand("annotation/prodigal_{parameters}/genes/{assembly}/proteins/proteins.gff2", 
+        lambda wildcards: expand("annotation/prodigal_{parameters}/genes/{assembly}/proteins/proteins.renamed.gff2", 
         parameters=wildcards.parameters,
         assembly=config["prodigal_rules"]["merging_sample_sets"][wildcards.sample_set])
     output:
