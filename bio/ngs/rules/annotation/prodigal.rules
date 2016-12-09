@@ -38,9 +38,11 @@ rule prodigal_gff_to_gff2:
         "annotation/prodigal_{parameters}/genes/{assembly}/proteins/proteins.gff"
     output:
         "annotation/prodigal_{parameters}/genes/{assembly}/proteins/proteins.renamed.gff2"
-    run: 
-        assembly_code = "PART{}_".format(wildcards.assembly.split(".")[-1])
-        shell("""grep -v '^#' {input} | sed 's/ID=\(\w*\);/ID={assembly_code}\\1;/g' > {output}""")
+    shell: 
+        # This messy sed command replaces the gene id given by prodigal with the 
+        # {contig id}_{i} where i corresponds to the gene index in the contig.
+        # Without this, the merged gff2 will have duplicates.
+        """grep -v '^#' {input} | sed 's/^\(\w*\)\(\t.*\)ID=\([0-9]*\)_\(\w*\);/\\1\\2ID=\\1_\\4;old_gene_id=\\3_\\4;/g' > {output}"""
 
 rule prodigal_merge_all_gff2:
     input: 
