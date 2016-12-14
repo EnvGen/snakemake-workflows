@@ -5,7 +5,7 @@ rule taxonomy_annotation_diamond_search:
     output:
         daa_output = "taxonomy_annotation/diamond/{db}/{sample_set}/{sample}/search_result.daa" 
     shell: 
-        "diamond blastp --threads 16 --query {input.protein_fasta} --db {input.db} --daa {output.daa_output}"
+        "diamond blastp --threads 16 --top 10 --seg yes --sensitive --query {input.protein_fasta} --db {input.db} --daa {output.daa_output}"
 
 rule taxonomy_annotation_diamond_view_to_tab:
     input:
