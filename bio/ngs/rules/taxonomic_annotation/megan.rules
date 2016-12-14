@@ -3,9 +3,10 @@ rule taxonomy_annotation_diamond_search:
         protein_fasta = "annotation/prokka_extended/prokka_output/{sample}/PROKKA.faa",
         db = lambda wildcards: config['taxonomic_annotation']['diamond']['databases'][wildcards.db]
     output:
-        daa_output = "taxonomy_annotation/diamond/{db}/{sample_set}/{sample}/search_result.daa" 
+        daa_output = "taxonomy_annotation/diamond/{db}/{sample_set}/{sample}/search_result.daa",
+        unaligned = "taxonomy_annotation/diamond/{db}/{sample_set}/{sample}/unaligned.faa"
     shell: 
-        "diamond blastp --threads 16 --top 10 --seg yes --sensitive --query {input.protein_fasta} --db {input.db} --daa {output.daa_output}"
+        "diamond blastp --threads 16 -t $SNIC_TMP --top 10 --seg yes --sensitive --query {input.protein_fasta} --db {input.db} --daa {output.daa_output} --un {output.unaligned}"
 
 rule taxonomy_annotation_diamond_view_to_tab:
     input:
