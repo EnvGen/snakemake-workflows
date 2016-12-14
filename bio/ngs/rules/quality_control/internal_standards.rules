@@ -1,0 +1,80 @@
+# vim: syntax=python tabstop=4 expandtab
+# coding: utf-8
+
+
+"""
+Rules for analysing mapping to reference genomes when adding internal dna standards.
+
+For usage, include this in your workflow.
+"""
+
+
+__author__ = "Johannes Alneberg"
+__license__ = "MIT"
+
+
+# bowtie2 map to reference sequence
+# bamtools split
+# syncronize read pairs?
+# unmapped bam file can be deleted after reads have been extracted
+# mapped bam file should be sorted and indexed to simplify vizualisation
+
+rule internal_standards_link_mapping:
+    input:
+        lambda wildcards: "mapping/bowtie2/{mapping_params}/{internal_reference}/units/{sample}.bam".format(mapping_params = config["internal_standards"]["mapping_params"],
+        internal_reference = config["internal_standards"]["sample_to_reference"][wildcards.sample],
+        sample = wildcards.sample)
+    output:
+        "internal_standards/mapping/{sample}.bam"
+    shell:
+        """ln -s ../../{input} {output}"""
+
+ruleorder: internal_standards_link_mapping > sam_to_bam
+ 
+rule internal_standards_bamtools_split:
+    input:
+        "internal_standards/mapping/{sample}.bam"
+    output:
+        mapped =   "internal_standards/mapping/{sample}.MAPPED.bam",
+        unmapped = "internal_standards/mapping/{sample}.UNMAPPED.bam"
+    params:
+        load_env = config["internal_standards"]["load_env"]
+    shell:
+        """{params.load_env}
+           bamtools split -mapped -in {input}""" 
+
+
+rule internal_standards_sync_bam:
+    input:
+        "internal_standards/mapping/{sample}.UNMAPPED.bam"
+    output:
+        "internal_standards/mapping/{sample}.UNMAPPED.sync.bam"
+    params:
+        load_env = config["internal_standards"]["load_env"]
+    shell:
+        """{params.load_env}
+           bamtools filter -isMateMapped false -in {input} -out {output}"""
+
+rule internal_standards_bam_to_fastq:
+    input:
+        "internal_standards/mapping/{sample}.UNMAPPED.sync.bam"
+    output:
+        R1 = "internal_standards/unmapped_reads/{sample}_R1.fq.gz",
+        R2 = "internal_standards/unmapped_reads/{sample}_R2.fq.gz"
+    params:
+        load_env = config["internal_standards"]["load_env"]
+    shell:
+        """{params.load_env}
+           bamtools filter -isFirstMate true -in {input} | bamtools convert -format fastq | gzip -c > {output.R1}
+           bamtools filter -isFirstMate false -in {input} | bamtools convert -format fastq | gzip -c > {output.R2}
+        """
+
+rule internal_standards_all:
+    input:
+        R1 = expand("internal_standards/unmapped_reads/{sample}_R1.fq.gz",
+                sample = config["internal_standards"]["samples"]),
+        R2 = expand("internal_standards/unmapped_reads/{sample}_R2.fq.gz",
+                sample = config["internal_standards"]["samples"]),
+        mapped_bam = expand("internal_standards/mapping/{sample}.MAPPED.sorted.bam",
+            sample = config["internal_standards"]["samples"])
+
