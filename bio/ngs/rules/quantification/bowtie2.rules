@@ -103,7 +103,7 @@ rule bowtie2_rpkm_gene_table:
             split_ref_set = wildcards.split_ref_set,
             sample = config["bowtie2_quant_rules"]["sample_groups"][wildcards.sample_group]
         ),
-        sample_info = "quantification/bowtie2_genes/sample_info.tsv"
+        sample_info = "quantification/bowtie2_genes/sample_info_with_nr_reads.tsv"
     output:
         "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/{sample_group}/rpkm_table.tsv.gz"
     run:
@@ -156,8 +156,7 @@ rule bowtie2_raw_counts_gene_table:
                 --sample_names {sample_names} \
                 --coverage_files {input.counts} \
                 --gene_lengths {input.gene_lengths} \
-                --input_compression 'gzip' \
-                --output_compression 'gzip' > {output}
+                --input_compression 'gzip'
         """)
 
 rule bowtie2_quant_rpkm_gene_all:
