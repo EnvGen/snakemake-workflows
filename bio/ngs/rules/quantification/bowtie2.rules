@@ -156,7 +156,7 @@ rule bowtie2_raw_counts_gene_table:
                 --sample_names {sample_names} \
                 --coverage_files {input.counts} \
                 --gene_lengths {input.gene_lengths} \
-                --input_compression 'gzip'
+                --input_compression 'gzip' | gzip > {output}
         """)
 
 rule bowtie2_quant_rpkm_gene_all:
