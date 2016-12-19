@@ -1,6 +1,6 @@
 rule taxonomy_annotation_diamond_search:
     input:
-        protein_fasta = "annotation/prokka_extended/prokka_output/{sample}/PROKKA.faa",
+        protein_fasta = "annotation/prodigal_default-meta/genes/{sample}/proteins/proteins.faa",
         db = lambda wildcards: config['taxonomic_annotation']['diamond']['databases'][wildcards.db]
     output:
         daa_output = "taxonomy_annotation/diamond/{db}/{sample_set}/{sample}/search_result.daa",
