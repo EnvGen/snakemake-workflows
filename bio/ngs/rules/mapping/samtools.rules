@@ -134,6 +134,7 @@ rule remove_mark_duplicates:
             -jar {config[samtools_rules][picard_jars]}/MarkDuplicates.jar \
             INPUT={input} \
             OUTPUT={output[0]} \
+            COMPRESSION_LEVEL=9 \
             METRICS_FILE={output[1]} \
             AS=TRUE \
             VALIDATION_STRINGENCY=LENIENT \
