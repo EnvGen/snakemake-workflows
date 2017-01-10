@@ -181,9 +181,23 @@ rule bowtie2_quant_coverage_annotation_table:
         """{config[bowtie2_quant_rules][load_env]}
             python {params.counts_annotations_table_script} {input.counts_table} {input.annotation_table} | gzip > {output}
         """
+rule bowtie2_quant_coverage_annotation_table_add_annotation:
+    input:
+        table = "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/annotations/{sample_group}/{type}.{count_unit}.tsv.gz",
+        description = "annotation/{type}/summary_annotation/source_descriptions.tsv
+    output:
+        "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/annotations/{sample_group}/{type}.{count_unit}.annotation.tsv.gz"
+    shell:
+        """
+           head -n 1 {input.table} > {output.table}_head
+           head -n 1 {input.description} > {output.table}_head
+           sort table without header
+           join table without header 
+           add concatted headers
+        """
 
 rule bowtie2_quant_coverage_annotation_table_all:
-    input: expand("quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/annotations/{sample_group}/{type}.{count_unit}.tsv.gz", \
+    input: expand("quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/annotations/{sample_group}/{type}.{count_unit}.annotation.tsv.gz", \
         mapping_params = config["bowtie2_quant_rules"]["mapping_params"], \
         split_ref_set = config["bowtie2_quant_rules"]["split_ref_sets"], \
         type = config["prodigal_rules"]["dbs"], \
