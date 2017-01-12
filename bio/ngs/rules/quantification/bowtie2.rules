@@ -189,7 +189,7 @@ rule bowtie2_quant_coverage_annotation_table:
         """
 
 rule bowtie2_quant_coverage_annotation_table_all:
-    input: expand("quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/annotations/{sample_group}/{type}.{count_unit}.annotation.tsv.gz", \
+    input: expand("quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/annotations/{sample_group}/{type}.{count_unit}.annotated.tsv.gz", \
         mapping_params = config["bowtie2_quant_rules"]["mapping_params"], \
         split_ref_set = config["bowtie2_quant_rules"]["split_ref_sets"], \
         type = config["prodigal_rules"]["dbs"], \
