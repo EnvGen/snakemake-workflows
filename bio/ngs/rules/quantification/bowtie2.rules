@@ -92,13 +92,8 @@ rule bowtie2_quant_coverage_table:
         """
 
 rule bowtie2_quant_coverage_table_all:
-<<<<<<< HEAD
     input: 
         expand("quantification/bowtie2/{reference}/avg_cov.tsv.gz",
-=======
-    input:
-        expand("quantification/bowtie2/{reference}/avg_cov.tsv",
->>>>>>> 26fabb4a5e4820e0b91911c0ec789376c7a96b3e
             reference=config["bowtie2_quant_rules"]["references"])
 
 rule bowtie2_rpkm_gene_table:
