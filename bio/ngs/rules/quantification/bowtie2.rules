@@ -92,8 +92,13 @@ rule bowtie2_quant_coverage_table:
         """
 
 rule bowtie2_quant_coverage_table_all:
+<<<<<<< HEAD
     input: 
         expand("quantification/bowtie2/{reference}/avg_cov.tsv.gz",
+=======
+    input:
+        expand("quantification/bowtie2/{reference}/avg_cov.tsv",
+>>>>>>> 26fabb4a5e4820e0b91911c0ec789376c7a96b3e
             reference=config["bowtie2_quant_rules"]["references"])
 
 rule bowtie2_rpkm_gene_table:
@@ -172,28 +177,20 @@ rule bowtie2_quant_rpkm_gene_all:
 rule bowtie2_quant_coverage_annotation_table:
     input:
         counts_table = "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/{sample_group}/{count_unit}_table.tsv.gz",
-        annotation_table = lambda wildcards: expand("annotation/{type}/summary_annotation/{gene_prediction}/all.{type}.standardized.tsv", type=wildcards.type,gene_prediction=config["bowtie2_quant_rules"]["gene_prediction"]) 
+        annotation_table = lambda wildcards: expand("annotation/{type}/summary_annotation/{gene_prediction}/all.{type}.standardized.tsv", type=wildcards.type,gene_prediction=config["bowtie2_quant_rules"]["gene_prediction"]),
+        annotation_info = "annotation/annotation_info/{type}/annotation_info.tsv"
     output:
-        "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/annotations/{sample_group}/{type}.{count_unit}.tsv.gz"
+        "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/annotations/{sample_group}/{type}.{count_unit}.annotated.tsv.gz"
     params:
-        counts_annotations_table_script = config["bowtie2_quant_rules"]["rpkm_annotations_table_script"]
+        counts_annotations_table_script = config["bowtie2_quant_rules"]["rpkm_annotations_table_script"],
+        tmp_dir = config["global_tmp_dir"]
     shell:
         """{config[bowtie2_quant_rules][load_env]}
-            python {params.counts_annotations_table_script} {input.counts_table} {input.annotation_table} | gzip > {output}
-        """
-rule bowtie2_quant_coverage_annotation_table_add_annotation:
-    input:
-        table = "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/annotations/{sample_group}/{type}.{count_unit}.tsv.gz",
-        description = "annotation/{type}/summary_annotation/source_descriptions.tsv
-    output:
-        "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/annotations/{sample_group}/{type}.{count_unit}.annotation.tsv.gz"
-    shell:
-        """
-           head -n 1 {input.table} > {output.table}_head
-           head -n 1 {input.description} > {output.table}_head
-           sort table without header
-           join table without header 
-           add concatted headers
+            python {params.counts_annotations_table_script} {input.counts_table} {input.annotation_table} > {params.tmp_dir}/unannotated.tsv
+            join <(tail -n +2 {input.annotation_info} | sort -k 1b,1) <(tail -n +2 {params.tmp_dir}/unannotated.tsv | sort -k 1b,1) > {params.tmp_dir}/annotated_no_head.tsv
+            paste <(head -n 1 {input.annotation_info}) <(head -n 1 {params.tmp_dir}/unannotated.tsv) > {params.tmp_dir}/header.tsv
+            cat {params.tmp_dir}/header.tsv {params.tmp_dir}/annotated_no_head.tsv | gzip > {output}
+            rm {params.tmp_dir}/annotated_no_head.tsv {params.tmp_dir}/header.tsv {params.tmp_dir}/unannotated.tsv
         """
 
 rule bowtie2_quant_coverage_annotation_table_all:
