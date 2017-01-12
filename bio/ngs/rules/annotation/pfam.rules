@@ -41,7 +41,7 @@ rule pfam_standardize_collate_annotations:
         "annotation/pfam/summary_annotation/{gene_prediction}/all.pfam.standardized.tsv"
     shell:
         """
-            awk '{{print $1,$6,$13,$12}}' {input} | tr ' ' '\t' > {output} 
+            awk '{{print $1,$6,$13,$12}}' {input} | tr ' ' '\t' | sed 's/\(PF[0-9]*\)\.\w*/\1/g' > {output} 
         """
 
 rule pfam_collate_annotation_all:

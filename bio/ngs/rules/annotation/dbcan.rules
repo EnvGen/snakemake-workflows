@@ -8,7 +8,7 @@ rule run_dbcan:
     params:
         dbcan_db = config["dbcan_rules"]["db_path"],
         hmmscan_params = config["dbcan_rules"]["hmmscan_params"]
-    shell: 
+    shell:
         """{config[dbcan_rules][load_env]};
            input_basename=`basename {input}`;
            database_basename=`basename {params.dbcan_db}`;
