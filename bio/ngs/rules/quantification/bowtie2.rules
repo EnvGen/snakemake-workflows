@@ -183,7 +183,7 @@ rule bowtie2_quant_coverage_annotation_table:
         """{config[bowtie2_quant_rules][load_env]}
             python {params.counts_annotations_table_script} {input.counts_table} {input.annotation_table} > {params.tmp_dir}/unannotated.tsv
             join -t '	' <(tail -n +2 {input.annotation_info} | sort -k 1b,1) <(tail -n +2 {params.tmp_dir}/unannotated.tsv | sort -k 1b,1) > {params.tmp_dir}/annotated_no_head.tsv
-            paste <(head -n 1 {input.annotation_info}) <(head -n 1 {params.tmp_dir}/unannotated.tsv) > {params.tmp_dir}/header.tsv
+            paste <(head -n 1 {input.annotation_info}) <(head -n 1 {params.tmp_dir}/unannotated.tsv | cut -f 2- ) > {params.tmp_dir}/header.tsv
             cat {params.tmp_dir}/header.tsv {params.tmp_dir}/annotated_no_head.tsv | gzip > {output}
             rm {params.tmp_dir}/annotated_no_head.tsv {params.tmp_dir}/header.tsv {params.tmp_dir}/unannotated.tsv
         """
