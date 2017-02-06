@@ -79,7 +79,7 @@ rule internal_standards_sync_mapped_bam:
         load_env = config["internal_standards"]["load_env"]
     shell:
         """{params.load_env}
-           bamtools filter -isMateMapped false -in {input} -out {output}"""
+           bamtools filter -isMateMapped true -in {input} -out {output}"""
 
 rule internal_standards_mapped_bam_to_fastq:
     input:
