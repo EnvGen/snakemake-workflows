@@ -47,10 +47,12 @@ rule bam_sort_name:
         "{prefix}.bam"
     output:
         "{prefix}.namesorted.bam"
+    params:
+        threads = config["samtools_rules"]["threads_for_sorting"]
     shell:
         """
         {config[samtools_rules][load_env]}
-        samtools sort -n {input} {wildcards.prefix}.namesorted
+        samtools sort -m 7G -@ {params.threads} -O 'bam' -n {input} > {output}
         """
 
 
