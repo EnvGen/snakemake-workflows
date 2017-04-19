@@ -29,15 +29,6 @@ config["fastqc_rules"]["reads"] = {}
 config["cutadapt_rules"]["reads"] = {}
 config["megahit_rules"]["samples"] = {}
 
-with open("sample_indices.json") as si:
-    sample_indices = json.load(si)
-
-with open("analysis_per_sample.json") as aps:
-    analysis_per_sample = json.load(aps)
-
-with open("sample_groups.json") as sg:
-    sample_groups = json.load(sg)
-
 for read_file in glob.glob("samples/raw/*.fq.gz"):
     read_basename = os.path.basename(read_file)
     read_mate_name = read_basename.replace(".fq.gz", "")
