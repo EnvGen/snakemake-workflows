@@ -23,7 +23,8 @@ rule fastuniq:
         tmp_R2="fastuniq/{trim_params}/{reads}_R2.fq",
         fifo_R1="fastuniq/{trim_params}/{reads}_fifo_R1.fq",
         fifo_R2="fastuniq/{trim_params}/{reads}_fifo_R2.fq",
-        file_list="fastuniq/{trim_params}/{reads}_file_list.txt"
+        file_list="fastuniq/{trim_params}/{reads}_file_list.txt",
+        sample_name="{reads}"
     shell:
         """
             mkfifo {params.fifo_R1} {params.fifo_R2}
