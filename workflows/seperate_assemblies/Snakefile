@@ -8,19 +8,19 @@ import shutil
 import glob
 from subprocess import check_output
 
-# Check that no submodule git repo is dirty
-submodules = ["BLUEPRINT_pipeline"]
-for submodule in submodules:
-    submodule_status = check_output(["git", "status", "--porcelain", submodule])
-    if not submodule_status == b"":
-        print(submodule_status)
-        raise Exception("Submodule {} is dirty. Commit changes before proceeding.".format(submodule))
-
-# Check that the git repo is not dirty
-submodule_status = check_output(["git", "status", "--porcelain"])
-if not submodule_status == b"":
-    print(submodule_status)
-    raise Exception("Repo is dirty. Commit changes before proceeding.")
+## Check that no submodule git repo is dirty
+#submodules = ["BLUEPRINT_pipeline"]
+#for submodule in submodules:
+#    submodule_status = check_output(["git", "status", "--porcelain", submodule])
+#    if not submodule_status == b"":
+#        print(submodule_status)
+#        raise Exception("Submodule {} is dirty. Commit changes before proceeding.".format(submodule))
+#
+## Check that the git repo is not dirty
+#submodule_status = check_output(["git", "status", "--porcelain"])
+#if not submodule_status == b"":
+#    print(submodule_status)
+#    raise Exception("Repo is dirty. Commit changes before proceeding.")
 
 configfile: "config.json"
 
@@ -63,17 +63,6 @@ for read_file in glob.glob("samples/raw/*.fq.gz"):
     else:
         config["cutadapt_rules"]["reads"][read_name] = [read_file]
     
-    # Add the variable barcode sequences for each sample to cutadapt config
-    if read_name in sample_indices["R1_index"]:
-        for trim_params_name, trim_params_config in config["cutadapt_rules"]["trim_params"].items():
-            if "common_variables" in trim_params_config.keys():
-                variables = config["cutadapt_rules"]["trim_params"][trim_params_name]["common_variables"].copy()
-                variables["R1_index"] = sample_indices["R1_index"][read_name]
-                variables["R2_rev_index"] = sample_indices["R2_rev_index"][read_name]
-                if "variables" not in config["cutadapt_rules"]["trim_params"][trim_params_name]:
-                    config["cutadapt_rules"]["trim_params"][trim_params_name]["variables"] = {}
-                config["cutadapt_rules"]["trim_params"][trim_params_name]["variables"][read_name] = variables
-
 config["bowtie2_rules"]["samples"] = {}
 config["bowtie2_rules"]["units"] = {}
 for read_file in glob.glob("finished_reads/*.fq.gz"):
@@ -129,7 +118,7 @@ rule concoct_cutup_10K:
             -m {input} > {output}
         """
 
-WORKFLOW_DIR = "../../snakemake-workflows/"
+WORKFLOW_DIR = "../../"
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/mapping/samtools.rules")
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/mapping/bowtie2.rules")
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/trimming/cutadapt.rules")

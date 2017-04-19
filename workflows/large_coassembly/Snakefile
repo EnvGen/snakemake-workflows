@@ -8,19 +8,19 @@ import shutil
 import glob
 from subprocess import check_output
 
-# Check that no submodule git repo is dirty
-submodules = ["BLUEPRINT_pipeline"]
-for submodule in submodules:
-    submodule_status = check_output(["git", "status", "--porcelain", submodule])
-    if not submodule_status == b"":
-        print(submodule_status)
-        raise Exception("Submodule {} is dirty. Commit changes before proceeding.".format(submodule))
-
-# Check that the git repo is not dirty
-submodule_status = check_output(["git", "status", "--porcelain"])
-if not submodule_status == b"":
-    print(submodule_status)
-    raise Exception("Repo is dirty. Commit changes before proceeding.")
+## Check that no submodule git repo is dirty
+#submodules = ["BLUEPRINT_pipeline"]
+#for submodule in submodules:
+#    submodule_status = check_output(["git", "status", "--porcelain", submodule])
+#    if not submodule_status == b"":
+#        print(submodule_status)
+#        raise Exception("Submodule {} is dirty. Commit changes before proceeding.".format(submodule))
+#
+## Check that the git repo is not dirty
+#submodule_status = check_output(["git", "status", "--porcelain"])
+#if not submodule_status == b"":
+#    print(submodule_status)
+#    raise Exception("Repo is dirty. Commit changes before proceeding.")
 
 # Chose config file based on if we're on uppmax or not
 configfile: "config.json"
