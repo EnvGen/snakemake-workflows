@@ -112,7 +112,6 @@ config["bowtie2_quant_rules"]["split_ref_sets"] = config["prokka_extended_rules"
 
 config["bowtie2_quant_rules"]["units"] = {}
 config["bowtie2_quant_rules"]["samples"] = {}
-config["bowtie2_quant_rules"]["sample_groups"] = sample_groups
 
 for i, sample_t in enumerate(config["megahit_rules"]["samples"].items()):
     sample, units = sample_t
