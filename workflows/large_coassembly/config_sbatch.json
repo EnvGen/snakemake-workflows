@@ -184,9 +184,9 @@
         "days": 10,
         "hours": 0,
         "minutes": 0,
-        "partition": "halvan",
-        "cores": 64,
-        "extra_parameters": "-M halvan --mail-type=END --mail-user=johannes.alneberg@scilifelab.se"
+        "partition": "node",
+        "cores": 16,
+        "extra_parameters": "-C mem512GB --mail-type=END --mail-user=johannes.alneberg@scilifelab.se"
     },
     "schedule_megahit_coassemble_all": "schedule_short",
     "schedule_ray_assembly_all": "schedule_short",
