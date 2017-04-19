@@ -100,11 +100,11 @@
     "megahit_rules": {
         "load_env": "",
         "assembly_params": {"default": ""},
-        "coassembly_params": {"default": "-m 0.99 --continue"},
+        "coassembly_params": {"default": "-m 0.99", "meta-sensitive": "--presets meta-sensitive"},
         "filter_length_script": "BLUEPRINT_pipeline/toolbox/scripts/filter_fasta_on_length.py",
         "split_in_parts_script": "BLUEPRINT_pipeline/toolbox/scripts/split_fasta.py",
-        "coassembly_pre_annotation_length_threshold": "1000",
-        "coassembly_pre_annotation_sequences_per_part": "20000"
+        "coassembly_pre_annotation_length_threshold": "200",
+        "coassembly_pre_annotation_sequences_per_part": "40000"
     },
     "prokka_extended_rules": {
         "dbs": ["cog", "pfam", "tigr"],
