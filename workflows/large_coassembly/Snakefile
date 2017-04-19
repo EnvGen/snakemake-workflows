@@ -86,6 +86,12 @@ for read_file in glob.glob("finished_reads/*.fq.gz"):
     else:
         config["megahit_rules"]["samples"][sample_name] = [read_file]
 
+if os.path.isfile("sample_groups.json"):
+    with open("sample_groups.json") as sg:
+        sample_groups = json.load(sg)
+else:
+    sample_groups = {"all_samples": config["megahit_rules"]["samples"].keys()}
+
 for contigs_f in glob.glob("assembly/megahit_coassembly/default/parts/contigs.*.fasta"):
     part = contigs_f.split('.')[-2]
     config["prokka_extended_rules"]["contigs"]['megahit_coassembly.{}'.format(part)] = contigs_f
@@ -112,6 +118,7 @@ config["bowtie2_quant_rules"]["split_ref_sets"] = config["prokka_extended_rules"
 
 config["bowtie2_quant_rules"]["units"] = {}
 config["bowtie2_quant_rules"]["samples"] = {}
+config["bowtie2_quant_rules"]["sample_groups"] = sample_groups
 
 for i, sample_t in enumerate(config["megahit_rules"]["samples"].items()):
     sample, units = sample_t
@@ -181,23 +188,10 @@ for read_file in glob.glob("only_for_mapping/with_internal_standards/*/*.fq.gz")
         config["bowtie2_rules"]["units"][sample_name] = [read_file]
         config["bowtie2_rules"]["samples"][sample_name] = [sample_name]
 
-# Load information on which internal standard have been used
-with open("internal_standards.json") as i_s:
-    internal_standards = json.load(i_s)
-
-config["internal_standards"]["sample_to_reference"] = {}
-
-for sample, reference in internal_standards.items():
-    ref_name = reference.split('/')[-2]
-    if ref_name not in config["bowtie2_rules"]["references"]:
-        config["bowtie2_rules"]["references"][ref_name] = reference
-
-    config["internal_standards"]["sample_to_reference"][sample] = ref_name
-
 config["taxonomic_annotation"]["sample_sets"] = config['bowtie2_quant_rules']["split_ref_sets"]
 
 
-WORKFLOW_DIR = "../../snakemake-workflows/"
+WORKFLOW_DIR = "../../"
 
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/mapping/bowtie2.rules")
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/annotation/prodigal.rules")
