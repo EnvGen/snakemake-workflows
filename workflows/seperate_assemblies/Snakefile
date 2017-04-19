@@ -31,9 +31,8 @@ if "ray_rules" not in config:
     config["ray_rules"]["samples"] = {}
 config["megahit_rules"]["samples"] = {}
 
-for read_file in glob.glob("samples/raw/*.fastq.gz"):
+for read_file in glob.glob("samples/raw/*.fq.gz"):
     read_basename = os.path.basename(read_file)
-    read_basename = read_basename.replace("1.fastq.gz", "R1.fq.gz").replace("2.fastq.gz", "R2.fq.gz")
     read_name = read_basename.replace(".fq.gz", "")
     config["fastqc_rules"]["reads"][read_name] = read_file
    
