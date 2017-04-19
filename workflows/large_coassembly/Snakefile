@@ -184,7 +184,7 @@ for read_file in glob.glob("only_for_mapping/with_internal_standards/*/*.fq.gz")
 config["taxonomic_annotation"]["sample_sets"] = config['bowtie2_quant_rules']["split_ref_sets"]
 
 
-WORKFLOW_DIR = "../../snakemake-workflows/"
+WORKFLOW_DIR = "../../"
 
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/mapping/bowtie2.rules")
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/annotation/prodigal.rules")
