@@ -182,19 +182,6 @@ for read_file in glob.glob("only_for_mapping/with_internal_standards/*/*.fq.gz")
         config["bowtie2_rules"]["units"][sample_name] = [read_file]
         config["bowtie2_rules"]["samples"][sample_name] = [sample_name]
 
-# Load information on which internal standard have been used
-with open("internal_standards.json") as i_s:
-    internal_standards = json.load(i_s)
-
-config["internal_standards"]["sample_to_reference"] = {}
-
-for sample, reference in internal_standards.items():
-    ref_name = reference.split('/')[-2]
-    if ref_name not in config["bowtie2_rules"]["references"]:
-        config["bowtie2_rules"]["references"][ref_name] = reference
-
-    config["internal_standards"]["sample_to_reference"][sample] = ref_name
-
 config["taxonomic_annotation"]["sample_sets"] = config['bowtie2_quant_rules']["split_ref_sets"]
 
 
