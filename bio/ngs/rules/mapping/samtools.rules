@@ -55,19 +55,6 @@ rule bam_sort_name:
         samtools sort -m 7G -@ {params.threads} -O 'bam' -n {input} > {output}
         """
 
-
-rule sam_to_bam:
-    input:
-        "{prefix}.sam"
-    output:
-        "{prefix}.bam"
-    shell:
-        """
-        {config[samtools_rules][load_env]}
-        samtools view -Sbh {input} > {output}
-        """
-
-
 rule bam_stats:
     input:
         "{prefix}.bam"
