@@ -1,0 +1,132 @@
+{
+    "sbatch_general": {
+        "account": "b2010008",
+        "wrapper_script": "/proj/b2010008/bin/sbatch_job"
+    },
+    "schedule_short": {
+        "days": 0,
+        "hours": 0,
+        "minutes": 15,
+        "partition": "core",
+        "cores": "1",
+        "extra_parameters": ""
+    },
+    "schedule_all": "schedule_short",
+    "schedule_quantify_all": "schedule_short",
+    "schedule_bowtie2_index": {
+        "days": 0,
+        "hours": 2,
+        "minutes": 0,
+        "partition": "core",
+        "cores": "1",
+        "extra_parameters": ""
+    },
+    "schedule_bowtie2_map": {
+        "days": 1,
+        "hours": 0,
+        "minutes": 0,
+        "partition": "core",
+        "cores": "16",
+        "extra_parameters": ""
+    },
+    "schedule_bam_sort_index": {
+        "days": 0,
+        "hours": 6,
+        "minutes": 0,
+        "partition": "core",
+        "cores": "1",
+        "extra_parameters": ""
+    },
+    "schedule_rpkm_per_orf": {
+        "days": 0,
+        "hours": 6,
+        "minutes": 0,
+        "partition": "core",
+        "cores": "1",
+        "extra_parameters": ""
+    },
+    "schedule_sickle": {
+        "days": 1,
+        "hours": 0,
+        "minutes": 0,
+        "partition": "core",
+        "cores": 1,
+        "extra_parameters": ""
+    },
+    "schedule_fastqc": {
+        "days": 0,
+        "hours": 4,
+        "minutes": 0,
+        "partition": "core",
+        "cores": 1,
+        "extra_parameters": ""
+    },
+    "schedule_cutadapt": {
+        "days": 0,
+        "hours": 7,
+        "minutes": 0,
+        "partition": "core",
+        "cores": 2,
+        "extra_parameters": ""
+    },
+    "schedule_fastuniq": {
+        "days": 0,
+        "hours": 6,
+        "minutes": 0,
+        "partition": "node",
+        "cores": 16,
+        "extra_parameters": ""
+    },
+    "schedule_fastqc_all": "schedule_short",
+    "schedule_cutadapt_trim_fixed": "schedule_cutadapt",
+    "schedule_cutadapt_pe": "schedule_cutadapt",
+    "schedule_cutadapt_all": "schedule_short",
+    "schedule_cutadapt_all_test": "schedule_short",
+    "schedule_fastqc_all_test": "schedule_short",
+    "schedule_ray_assembly": {
+        "days": 2,
+        "hours": 0,
+        "minutes": 0,
+        "partition": "node",
+        "cores": 32,
+        "extra_parameters": "--mail-type=END --mail-user=johannes.alneberg@scilifelab.se"
+    },
+    "schedule_megahit_assemble_sample": {
+        "days": 0,
+        "hours": 12,
+        "minutes": 0,
+        "partition": "node",
+        "cores": 16,
+        "extra_parameters": "-C mem512GB --mail-type=END --mail-user=johannes.alneberg@scilifelab.se"
+    },
+    "schedule_megahit_coassemble": {
+        "days": 8,
+        "hours": 0,
+        "minutes": 0,
+        "partition": "node",
+        "cores": 16,
+        "extra_parameters": "-C mem512GB --mail-type=END --mail-user=johannes.alneberg@scilifelab.se"
+    },
+    "schedule_megahit_coassemble_all": "schedule_short",
+    "schedule_ray_assembly_all": "schedule_short",
+    "schedule_megahit_assemble_sample_all": "schedule_short",
+    "schedule_concoct_cutup_10K": "schedule_short",
+    "schedule_bam_sort": {
+        "days": 0,
+        "hours": 12,
+        "minutes": 0,
+        "partition": "node",
+        "cores": "16",
+        "extra_parameters": ""
+    },
+    "schedule_remove_mark_duplicates": {
+        "days": 1,
+        "hours": 0,
+        "minutes": 0,
+        "partition": "node",
+        "cores": "16",
+        "extra_parameters": ""
+    },
+    "schedule_sample_merge_no_rmdup": "schedule_short",
+    "schedule_bedtools_coverage": "schedule_bowtie2_map"
+}

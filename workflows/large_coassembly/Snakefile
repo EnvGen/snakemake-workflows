@@ -1,0 +1,236 @@
+__author__ = "Johannes Alneberg"
+__license__ = "MIT"
+
+
+import os
+import sys
+import shutil
+import glob
+from subprocess import check_output
+
+# Check that no submodule git repo is dirty
+submodules = ["BLUEPRINT_pipeline"]
+for submodule in submodules:
+    submodule_status = check_output(["git", "status", "--porcelain", submodule])
+    if not submodule_status == b"":
+        print(submodule_status)
+        raise Exception("Submodule {} is dirty. Commit changes before proceeding.".format(submodule))
+
+# Check that the git repo is not dirty
+submodule_status = check_output(["git", "status", "--porcelain"])
+if not submodule_status == b"":
+    print(submodule_status)
+    raise Exception("Repo is dirty. Commit changes before proceeding.")
+
+# Chose config file based on if we're on uppmax or not
+configfile: "config.json"
+
+config["fastqc_rules"]["reads"] = {}
+config["cutadapt_rules"]["reads"] = {}
+config["megahit_rules"]["samples"] = {}
+
+with open("sample_indices.json") as si:
+    sample_indices = json.load(si)
+
+with open("analysis_per_sample.json") as aps:
+    analysis_per_sample = json.load(aps)
+
+with open("sample_groups.json") as sg:
+    sample_groups = json.load(sg)
+
+for read_file in glob.glob("samples/raw/*.fq.gz"):
+    read_basename = os.path.basename(read_file)
+    read_mate_name = read_basename.replace(".fq.gz", "")
+    config["fastqc_rules"]["reads"][read_mate_name] = read_file
+   
+    read_name = read_mate_name.replace("_R1", "").replace("_R2", "")
+    
+    # Add all steps to fastqc - this will cause fastqc to run after each step 
+    # as well as on the raw reads 
+    for trim_params_name, trim_params_dict in config["cutadapt_rules"]["trim_params"].items():
+        if trim_params_name not in analysis_per_sample[read_name]:
+            continue
+
+        config["fastqc_rules"]["reads"]["cutadapt_"+trim_params_name+"_"+read_mate_name] = \
+            "cutadapt/adapt_cutting/{trim_params}/{read}".format(
+                trim_params=trim_params_name,
+                read = read_basename
+            ) 
+
+        config["fastqc_rules"]["reads"]["fastuniq_"+trim_params_name+"_"+read_mate_name] = \
+            "fastuniq/{trim_params}/{read}".format(
+                trim_params=trim_params_name,
+                read = read_basename
+            ) 
+
+    # Hack to get read pairs in a list
+    if read_name in config["cutadapt_rules"]["reads"]:
+        config["cutadapt_rules"]["reads"][read_name].append(read_file)
+        config["cutadapt_rules"]["reads"][read_name].sort()
+    else:
+        config["cutadapt_rules"]["reads"][read_name] = [read_file]
+    
+    # Add the variable barcode sequences for each sample to cutadapt config
+    trim_params_names = analysis_per_sample[read_name]
+    for trim_params_name, trim_params_config in config["cutadapt_rules"]["trim_params"].items():
+        if trim_params_name in trim_params_names:
+            if "common_variables" in trim_params_config.keys():
+                variables = config["cutadapt_rules"]["trim_params"][trim_params_name]["common_variables"].copy()
+                if read_name in sample_indices["R1_index"]:
+                    variables["R1_index"] = sample_indices["R1_index"][read_name]
+                    variables["R2_rev_index"] = sample_indices["R2_rev_index"][read_name]
+                if "variables" not in config["cutadapt_rules"]["trim_params"][trim_params_name]:
+                    config["cutadapt_rules"]["trim_params"][trim_params_name]["variables"] = {}
+                config["cutadapt_rules"]["trim_params"][trim_params_name]["variables"][read_name] = variables
+
+# Add reads to be assembled
+for read_file in glob.glob("finished_reads/*.fq.gz"):
+    read_basename = os.path.basename(read_file)
+    read_name = read_basename.replace(".fq.gz", "")
+    sample_name = read_name.replace("_R1", "").replace("_R2", "")
+
+    if sample_name in config["megahit_rules"]["samples"]:
+        config["megahit_rules"]["samples"][sample_name].append(read_file)
+        config["megahit_rules"]["samples"][sample_name].sort()
+    else:
+        config["megahit_rules"]["samples"][sample_name] = [read_file]
+
+for contigs_f in glob.glob("assembly/megahit_coassembly/default/parts/contigs.*.fasta"):
+    part = contigs_f.split('.')[-2]
+    config["prokka_extended_rules"]["contigs"]['megahit_coassembly.{}'.format(part)] = contigs_f
+    config["prokka_extended_rules"]["locustags"]['megahit_coassembly.{}'.format(part)] = "PROKKA_MOD_PART{}".format(part)
+
+config["assemblies"] = config["prokka_extended_rules"]["contigs"]
+
+# Add megahit coassembly annotated sequences for merging before quantification
+config["prokka_extended_rules"]["merging_sample_sets"] = {}
+config["prokka_extended_rules"]["merging_sample_sets"]["megahit_coassembly"] = []
+for contigs_name, contigs_f in config["prokka_extended_rules"]["contigs"].items():
+    if contigs_name.startswith("megahit_coassembly"):
+        config["prokka_extended_rules"]["merging_sample_sets"]["megahit_coassembly"].append(contigs_name)
+
+config["prokka_extended_rules"]["merging_sample_sets"]["megahit_coassembly"].sort(key= lambda x: int(x.split('.')[-1]))
+
+config["prodigal_rules"]["merging_sample_sets"] = config["prokka_extended_rules"]["merging_sample_sets"]
+config["bowtie2_quant_rules"]["split_ref_sets"] = config["prokka_extended_rules"]["merging_sample_sets"]
+
+megahit_coassembly_genes = "annotation/prokka_extended/all_annotated_sequences/megahit_coassembly/PROKKA.ffn"
+megahit_coassembly_contigs = "assembly/megahit_coassembly/default/final.contigs.fa"
+
+config["bowtie2_quant_rules"]["split_ref_sets"] = config["prokka_extended_rules"]["merging_sample_sets"]
+
+config["bowtie2_quant_rules"]["units"] = {}
+config["bowtie2_quant_rules"]["samples"] = {}
+config["bowtie2_quant_rules"]["sample_groups"] = sample_groups
+
+for i, sample_t in enumerate(config["megahit_rules"]["samples"].items()):
+    sample, units = sample_t
+    if sample.startswith("P1994"):
+        # I didn't realize the P1994 samples had internal standards in them
+        # therefore, there are different fastq files for the assembly 
+        # (don't want to redo the assembly at this point) and the mapping.
+        pass
+    else:
+        config["bowtie2_quant_rules"]["units"][sample] = units
+        config["bowtie2_quant_rules"]["samples"][sample] = [sample]
+
+# Add reads for mapping that was not part of assembly
+config["bowtie2_quant_rules"]["rna_samples"] = []
+for read_file in glob.glob("only_for_mapping/finished_reads/rna/*.fq.gz"):
+    read_basename = os.path.basename(read_file)
+    read_name = read_basename.replace(".fq.gz", "")
+    sample_name = read_name.replace("_R1", "").replace("_R2", "")
+    
+    # RNA-samples have slightly different handling
+    config["bowtie2_quant_rules"]["rna_samples"].append(sample_name)
+    if sample_name in config["bowtie2_quant_rules"]["samples"]:
+        config["bowtie2_quant_rules"]["units"][sample_name].append(read_file)
+        config["bowtie2_quant_rules"]["units"][sample_name].sort()
+    else:
+        config["bowtie2_quant_rules"]["units"][sample_name] = [read_file]
+        config["bowtie2_quant_rules"]["samples"][sample_name] = [sample_name]
+
+    config["fastqc_rules"]["reads"]["finished_reads_only_for_mapping_rna_" + read_name] = read_file
+
+
+for read_file in glob.glob("only_for_mapping/finished_reads/dna/*.fq.gz"):
+    read_basename = os.path.basename(read_file)
+    read_name = read_basename.replace(".fq.gz", "")
+    sample_name = read_name.replace("_R1", "").replace("_R2", "")
+    
+    if sample_name in config["bowtie2_quant_rules"]["samples"]:
+        config["bowtie2_quant_rules"]["units"][sample_name].append(read_file)
+        config["bowtie2_quant_rules"]["units"][sample_name].sort()
+    else:
+        config["bowtie2_quant_rules"]["units"][sample_name] = [read_file]
+        config["bowtie2_quant_rules"]["samples"][sample_name] = [sample_name]
+
+config["bowtie2_quant_rules"]["references"] = {"megahit_coassembly_genes": megahit_coassembly_genes}
+config["bowtie2_quant_rules"]["references"]["megahit_coassembly_contigs"] = megahit_coassembly_contigs
+config["bowtie2_quant_rules"]["reference_for_ref_set"]["megahit_coassembly"] = "megahit_coassembly_contigs"
+
+config["bowtie2_rules"]["references"] = config["bowtie2_quant_rules"]["references"]
+config["bowtie2_rules"]["units"] = config["bowtie2_quant_rules"]["units"]
+config["bowtie2_rules"]["samples"] = config["bowtie2_quant_rules"]["samples"]
+config["bowtie2_rules"]["mapping_params"] = config["bowtie2_quant_rules"]["mapping_params"]
+
+# Add reads that will go through internal standards protocol before added to the pipeline
+for read_file in glob.glob("only_for_mapping/with_internal_standards/*/*.fq.gz"):
+    read_basename = os.path.basename(read_file)
+    read_name = read_basename.replace(".fq.gz", "")
+    sample_name = read_name.replace("_R1", "").replace("_R2", "")
+    
+    # Adding to bowtie2_rules instead of bowtie2_quant_rules
+    # So that the mapping against the reference genome can 
+    # work without adding the samples to the pipeline 
+    if sample_name in config["bowtie2_quant_rules"]["samples"]:
+        config["internal_standards"]["samples"].append(sample_name)
+        config["bowtie2_rules"]["units"][sample_name].append(read_file)
+        config["bowtie2_rules"]["units"][sample_name].sort()
+    else:
+        config["bowtie2_rules"]["units"][sample_name] = [read_file]
+        config["bowtie2_rules"]["samples"][sample_name] = [sample_name]
+
+# Load information on which internal standard have been used
+with open("internal_standards.json") as i_s:
+    internal_standards = json.load(i_s)
+
+config["internal_standards"]["sample_to_reference"] = {}
+
+for sample, reference in internal_standards.items():
+    ref_name = reference.split('/')[-2]
+    if ref_name not in config["bowtie2_rules"]["references"]:
+        config["bowtie2_rules"]["references"][ref_name] = reference
+
+    config["internal_standards"]["sample_to_reference"][sample] = ref_name
+
+config["taxonomic_annotation"]["sample_sets"] = config['bowtie2_quant_rules']["split_ref_sets"]
+
+
+WORKFLOW_DIR = "../../snakemake-workflows/"
+
+include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/mapping/bowtie2.rules")
+include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/annotation/prodigal.rules")
+include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/annotation/eggnog.rules")
+include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/annotation/ec.rules")
+include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/annotation/dbcan.rules")
+include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/annotation/pfam.rules")
+include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/mapping/samtools.rules")
+include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/blast/rpsblast.rules")
+include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/trimming/cutadapt.rules")
+include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/quality_control/fastqc.rules")
+include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/duplicate_removal/fastuniq.rules")
+include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/assembly/megahit.rules")
+include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/annotation/prokka.rules")
+include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/quantification/bowtie2.rules")
+include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/taxonomic_annotation/megan.rules")
+include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/quality_control/internal_standards.rules")
+
+
+# The index is large, need to use .bt2l indices
+ruleorder: bowtie2_map_large > bowtie2_map
+
+rule preprocess_all:
+    input:
+        htmls=expand("fastqc/{reads}/{reads}_fastqc.html", reads=config["fastqc_rules"]["reads"]),
+        zips=expand("fastqc/{reads}/{reads}_fastqc.zip", reads=config["fastqc_rules"]["reads"])

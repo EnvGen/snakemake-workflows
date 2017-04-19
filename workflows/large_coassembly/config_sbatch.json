@@ -1,0 +1,436 @@
+{
+    "sbatch_general": {
+        "account": "b2010008",
+        "wrapper_script": "/proj/b2010008/bin/sbatch_job"
+    },
+    "schedule_short": {
+        "days": 0,
+        "hours": 0,
+        "minutes": 15,
+        "partition": "core",
+        "cores": "1",
+        "extra_parameters": ""
+    },
+    "schedule_all": "schedule_short",
+    "schedule_quantify_all": "schedule_short",
+    "schedule_bowtie2_index": {
+        "days": 1,
+        "hours": 0,
+        "minutes": 0,
+        "partition": "core",
+        "cores": "2",
+        "extra_parameters": ""
+    },
+    "schedule_bowtie2_map": {
+        "days": 1,
+        "hours": 0,
+        "minutes": 0,
+        "partition": "core",
+        "cores": "4",
+        "extra_parameters": ""
+    },
+    "schedule_bowtie2_index_large": {
+        "days": 1,
+        "hours": 0,
+        "minutes": 0,
+        "partition": "node",
+        "cores": "16",
+        "extra_parameters": ""
+    },
+    "schedule_bowtie2_map_large": {
+        "days": 1,
+        "hours": 0,
+        "minutes": 0,
+        "partition": "node",
+        "cores": "16",
+        "extra_parameters": ""
+    },
+    "schedule_one_core_medium": {
+        "days": 0,
+        "hours": 6,
+        "minutes": 0,
+        "partition": "core",
+        "cores": "1",
+        "extra_parameters": ""
+    },
+    "schedule_remove_mark_duplicates": {
+        "days": 1,
+        "hours": 0,
+        "minutes": 0,
+        "partition": "node",
+        "cores": "16",
+        "extra_parameters": ""
+    },
+    "schedule_bedtools_coverage": {
+        "days": 0,
+        "hours": 6,
+        "minutes": 0,
+        "partition": "core",
+        "cores": "1",
+        "extra_parameters": ""
+    },
+    "schedule_bam_sort_name": {
+        "days": 0,
+        "hours": 2,
+        "minutes": 0,
+        "partition": "node",
+        "cores": "16",
+        "extra_parameters": ""
+    },
+    "schedule_bam_sort": {
+        "days": 0,
+        "hours": 12,
+        "minutes": 0,
+        "partition": "node",
+        "cores": "16",
+        "extra_parameters": ""
+    },
+    "schedule_bowtie2_quant_coverage_table": {
+        "days": 0,
+        "hours": 1,
+        "minutes": 0,
+        "partition": "node",
+        "cores": "16",
+        "extra_parameters": ""
+    },
+    "schedule_bowtie2_quant_coverage_table_all": "schedule_short",
+    "schedule_bowtie2_quant_all": "schedule_short",
+    "schedule_bowtie2_quant_genes_histogram": {
+        "days": 0,
+        "hours": 6,
+        "minutes": 0,
+        "partition": "node",
+        "cores": "16",
+        "extra_parameters": "-C mem512GB"
+    },
+    "schedule_bowtie2_quant_genes": "schedule_short",
+    "schedule_bowtie2_quant_genes_all": "schedule_short",
+    "schedule_prokka_extended_gff_to_bed": "schedule_one_core_medium",
+    "schedule_prokka_extended_merge_bed": "schedule_short",
+    "schedule_prodigal_merge_all_gff2": "schedule_short",
+    "schedule_prodigal_gff_to_gff2": "schedule_short",
+    "schedule_prodigal_gene_lengths": "schedule_short",
+    "schedule_sample_merge_no_rmdup": "schedule_short",
+    "schedule_sample_merge": "schedule_short",
+    "schedule_bam_sort_index": "schedule_one_core_medium",
+    "schedule_rpkm_per_orf": {
+        "days": 0,
+        "hours": 6,
+        "minutes": 0,
+        "partition": "core",
+        "cores": "1",
+        "extra_parameters": ""
+    },
+    "schedule_sickle": {
+        "days": 1,
+        "hours": 0,
+        "minutes": 0,
+        "partition": "core",
+        "cores": 1,
+        "extra_parameters": ""
+    },
+    "schedule_fastqc": {
+        "days": 0,
+        "hours": 4,
+        "minutes": 0,
+        "partition": "core",
+        "cores": 4,
+        "extra_parameters": ""
+    },
+    "schedule_cutadapt": {
+        "days": 0,
+        "hours": 7,
+        "minutes": 0,
+        "partition": "core",
+        "cores": 1,
+        "extra_parameters": ""
+    },
+    "schedule_fastuniq": {
+        "days": 0,
+        "hours": 12,
+        "minutes": 0,
+        "partition": "core",
+        "cores": 1,
+        "extra_parameters": "",
+        "cores_per_filesize": {
+            "file": "fastq",
+            "factor_per_Gb": 2.0,
+            "exponent_of_Gb": 2.0
+        }
+    },
+    "schedule_fastqc_all": "schedule_short",
+    "schedule_cutadapt_trim_fixed": "schedule_cutadapt",
+    "schedule_cutadapt_pe": "schedule_cutadapt",
+    "schedule_cutadapt_all": "schedule_short",
+    "schedule_cutadapt_all_test": "schedule_short",
+    "schedule_fastqc_all_test": "schedule_short",
+    "schedule_ray_assembly": {
+        "days": 2,
+        "hours": 0,
+        "minutes": 0,
+        "partition": "node",
+        "cores": 32,
+        "extra_parameters": "--mail-type=END --mail-user=johannes.alneberg@scilifelab.se"
+    },
+    "schedule_megahit_assemble_sample": {
+        "days": 0,
+        "hours": 12,
+        "minutes": 0,
+        "partition": "node",
+        "cores": 16,
+        "extra_parameters": "-C mem512GB --mail-type=END --mail-user=johannes.alneberg@scilifelab.se"
+    },
+    "schedule_megahit_coassemble": {
+        "days": 10,
+        "hours": 0,
+        "minutes": 0,
+        "partition": "halvan",
+        "cores": 64,
+        "extra_parameters": "-M halvan --mail-type=END --mail-user=johannes.alneberg@scilifelab.se"
+    },
+    "schedule_megahit_coassemble_all": "schedule_short",
+    "schedule_ray_assembly_all": "schedule_short",
+    "schedule_megahit_assemble_sample_all": "schedule_short",
+    "schedule_megahit_coassemble_split": "schedule_one_core_medium",
+    "schedule_prokka_extended_run": {
+        "days": 1,
+        "hours": 0,
+        "minutes": 0,
+        "partition": "node",
+        "cores": "16",
+        "extra_parameters": "--mail-user johannes.alneberg@scilifelab.se --mail-type END"
+    },
+    "schedule_prokka_extended_output": {
+        "days": 0,
+        "hours": 0,
+        "minutes": 20,
+        "partition": "core",
+        "cores": "1",
+        "extra_parameters": ""
+    },
+    "schedule_rpsblast_run": {
+        "days": 1,
+        "hours": 0,
+        "minutes": 0,
+        "partition": "node",
+        "cores": "16",
+        "extra_parameters": ""
+    },
+    "schedule_prokka_extended_run_rpsblast": {
+        "days": 1,
+        "hours": 0,
+        "minutes": 0,
+        "partition": "core",
+        "cores": "4",
+        "extra_parameters": ""
+    },
+    "schedule_prokka_extended_all": "schedule_short",
+    "schedule_prokka_extended_rename_before_merge_annotated_sequences": "schedule_short",
+    "schedule_prokka_extended_merge_annotated_sequences": "schedule_short",
+    "schedule_prokka_extended_merge_annotated_sequences_all": "schedule_short",
+    "schedule_prokka_extended_get_prokka_annotation": {
+        "days": 0,
+        "hours": 1,
+        "minutes": 0,
+        "partition": "core",
+        "cores": 1,
+        "extra_parameters": ""
+    },
+    "schedule_prokka_extended_get_prokka_annotation_all_samples": "schedule_short",
+    "schedule_bowtie2_quant_coverage_annotation_table": {
+        "days": 0,
+        "hours": 3,
+        "minutes": 0,
+        "partition": "core",
+        "cores": 1,
+        "extra_parameters": ""
+    },
+    "schedule_bowtie2_rpkm_gene_table": {
+        "days": 0,
+        "hours": 12,
+        "minutes": 0,
+        "partition": "core",
+        "cores": 4,
+        "extra_parameters": ""
+    },
+    "schedule_taxonomy_annotation_diamond_view_to_tab": "schedule_short",
+    "schedule_taxonomy_annotation_diamond_search": {
+        "days": 0,
+        "hours": 12,
+        "minutes": 0,
+        "partition": "node",
+        "cores": 16,
+        "extra_parameters": ""
+    },
+    "schedule_taxonomy_annotation_megan_taxid_and_path": {
+        "days": 0,
+        "hours": 2,
+        "minutes": 0,
+        "partition": "core",
+        "cores": 2,
+        "extra_parameters": ""
+    },
+    "schedule_taxonomy_annotation_megan_per_contig_lca": {
+        "days": 0,
+        "hours": 2,
+        "minutes": 0,
+        "partition": "core",
+        "cores": 1,
+        "extra_parameters": ""
+    },
+    "schedule_taxonomy_annotation_megan_merge_lca": "schedule_short",
+    "schedule_taxonomy_annotation_megan_merge": "schedule_short",
+    "schedule_taxonomy_annotation_megan_all": "schedule_short",
+    "schedule_bowtie2_quant_genes_htseq_counts": {
+        "days": 0,
+        "hours": 6,
+        "minutes": 0,
+        "partition": "core",
+        "cores": 3,
+        "extra_parameters": ""
+    },
+    "schedule_bowtie2_tpm_gene_table": {
+        "days": 0,
+        "hours": 1,
+        "minutes": 0,
+        "partition": "core",
+        "cores": 4,
+        "extra_parameters": ""
+    },
+    "schedule_bowtie2_raw_counts_gene_table": {
+        "days": 0,
+        "hours": 1,
+        "minutes": 0,
+        "partition": "core",
+        "cores": 4,
+        "extra_parameters": ""
+    },
+    "schedule_internal_standards_all": "schedule_short",
+    "schedule_internal_standards_bam_to_fastq": {
+        "days": 0,
+        "hours": 1,
+        "minutes": 0,
+        "partition": "core",
+        "cores": 1,
+        "extra_parameters": ""
+    },
+    "schedule_internal_standards_bamtools_split": {
+        "days": 0,
+        "hours": 1,
+        "minutes": 0,
+        "partition": "core",
+        "cores": 1,
+        "extra_parameters": ""
+    },
+    "schedule_internal_standards_link_mapping": "schedule_short",
+    "schedule_internal_standards_sync_bam": {
+        "days": 0,
+        "hours": 1,
+        "minutes": 0,
+        "partition": "core",
+        "cores": 1,
+        "extra_parameters": ""
+    },
+    "schedule_internal_standards_sync_mapped_bam": {
+        "days": 0,
+        "hours": 1,
+        "minutes": 0,
+        "partition": "core",
+        "cores": 1,
+        "extra_parameters": ""
+    },
+    "schedule_internal_standards_mapped_bam_to_fastq": {
+        "days": 0,
+        "hours": 1,
+        "minutes": 0,
+        "partition": "core",
+        "cores": 1,
+        "extra_parameters": ""
+    },
+    "schedule_prodigal_run": "schedule_one_core_medium",
+    "schedule_run_eggnog": {
+        "days": 4,
+        "hours": 0,
+        "minutes": 0,
+        "partition": "core",
+        "cores": 2,
+        "extra_parameters": "--mail-type=END --mail-user=johannes.alneberg@scilifelab.se"
+    },
+    "schedule_eggnog_filter_output": {
+        "days": 0,
+        "hours": 1,
+        "minutes": 0,
+        "partition": "core",
+        "cores": 1,
+        "extra_parameters": ""
+    },
+    "schedule_eggnog_sort_on_score": {
+        "days": 0,
+        "hours": 1,
+        "minutes": 0,
+        "partition": "core",
+        "cores": 1,
+        "extra_parameters": ""
+    },
+    "schedule_eggnog_keep_only_top_score": {
+        "days": 0,
+        "hours": 1,
+        "minutes": 0,
+        "partition": "core",
+        "cores": 1,
+        "extra_parameters": ""
+    },
+    "schedule_eggnog_collate_annotations": {
+        "days": 0,
+        "hours": 12,
+        "minutes": 0,
+        "partition": "core",
+        "cores": 1,
+        "extra_parameters": "--mail-type=END --mail-user=johannes.alneberg@scilifelab.se"
+    },
+    "schedule_run_dbcan": {
+        "days": 1,
+        "hours": 0,
+        "minutes": 0,
+        "partition": "core",
+        "cores": 2,
+        "extra_parameters": "--mail-type=END --mail-user=johannes.alneberg@scilifelab.se"
+    },
+    "schedule_dbcan_filter_output": {
+        "days": 0,
+        "hours": 1,
+        "minutes": 0,
+        "partition": "core",
+        "cores": 1,
+        "extra_parameters": ""
+    },
+    "schedule_dbcan_collate_annotations": {
+        "days": 0,
+        "hours": 0,
+        "minutes": 15,
+        "partition": "core",
+        "cores": 1,
+        "extra_parameters": "--mail-type=END --mail-user=johannes.alneberg@scilifelab.se"
+    },
+    "schedule_run_pfam": {
+        "days": 4,
+        "hours": 0,
+        "minutes": 0,
+        "partition": "core",
+        "cores": 2,
+        "extra_parameters": ""
+    },
+    "schedule_pfam_sort_on_name": "schedule_short",
+    "schedule_pfam_collate_annotations": {
+        "days": 0,
+        "hours": 0,
+        "minutes": 15,
+        "partition": "core",
+        "cores": 1,
+        "extra_parameters": "--mail-type=END --mail-user=johannes.alneberg@scilifelab.se"
+    },
+    "schedule_dbcan_standardize_collate_annotations": "schedule_short",
+    "schedule_eggnog_standardize_collate_annotations": "schedule_short",
+    "schedule_pfam_standardize_collate_annotations": "schedule_short",
+    "schedule_prodigal_gff_to_bed": "schedule_one_core_medium"
+}

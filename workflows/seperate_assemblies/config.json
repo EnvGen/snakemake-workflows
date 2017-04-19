@@ -1,0 +1,209 @@
+{
+    "bowtie2_rules": {
+        "load_env": "module load bioinfo-tools bowtie2/2.2.6 samtools/1.1",
+        "platform": "Illumina",
+        "mapping_params": {
+            "default": "",
+            "local": "--local",
+            "local_very_sensitive": "--very-sensitive-local"
+        }
+    },
+    "samtools_rules": {
+        "load_env": "module load bioinfo-tools samtools/1.3 BEDTools/2.21.0 picard/1.118",
+        "picard_jars": "/sw/apps/bioinfo/picard/1.118/milou",
+        "threads_for_sorting": "16"
+    },
+    "mapping_report_rules": {},
+    "concoct_rules": {
+        "load_env": "source activate concoct && module load bioinfo-tools MUMmer/3.23 # CONCOCT dev f4cb9fcb",
+        "mapper": "bowtie2",
+        "mapping_params": "default",
+        "concoct_params": {
+            "cutoff-1000-maxcluster-1000": "-c 1000 -l 1000"
+        },
+        "scripts_dir": "~/repos/CONCOCT/scripts"
+    },
+    "prodigal_rules": {
+        "load_env": "module load bioinfo-tools prodigal/2.6.3 && source activate basic_sandbox",
+        "length_script": "BLUEPRINT_pipeline/toolbox/scripts/fasta_lengths.py",
+        "dbs": ["pfam", "dbCAN", "EggNOG"],
+        "prodigal_params": {
+            "default-meta": "-p meta"
+        }
+    },
+    "annotation_rules": {
+        "gene_prediction": "prodigal_default-meta"
+    },
+    "annotate_reference": {
+        "load_env": "module load bioinfo-tools BioPerl/1.6.1_PERL5.10.1 blast/2.2.28+ hmmer/3.1b1-intel prodigal/2.6.3 gnuparallel"
+    },
+    "from_mapping": {
+        "load_env": "module load bioinfo-tools samtools/0.1.19"
+    },
+    "rpsblast_rules": {
+        "load_env": "module load bioinfo-tools blast/2.2.29+ gnuparallel/20140222",
+        "rpsblast_params": {
+            "default-concoct": "-outfmt '6 qseqid sseqid evalue pident score qstart qend sstart send length slen' -max_target_seqs 1 -evalue 0.00001",
+            "only-evalue": "-outfmt '6 qseqid sseqid evalue pident score qstart qend sstart send length slen' -evalue 0.00001"
+        },
+        "databases": {
+            "cog": "/sw/data/uppnex/cdd/little_endian/Cog",
+            "pfam": "/sw/data/uppnex/cdd/little_endian/Pfam",
+            "tigr": "/sw/data/uppnex/cdd/little_endian/Tigr"
+        },
+        "parallel_params": "-N 16 --env PATH",
+        "query_aas": {}
+    },
+    "fastqc_rules": {
+        "load_env": "module load bioinfo-tools FastQC/0.11.2"
+    },
+    "cutadapt_rules": {
+        "load_env": "module load bioinfo-tools cutadapt/1.8.0",
+        "trim_params": {
+            "quality_adapter_no_indices": {
+                "1": {
+                    "trim_end": "-q 15,15",
+                    "trim_start": "-u 0"
+                    },
+                "2": {
+                    "trim_end": "-q 15,15",
+                    "trim_start": "-u 0"
+                    },
+                "variable_template": "-n 3 --minimum-length 31 -a {R1_first} -G '^CGTGTGCTCTTCCGATCT' -A {R2_rev_end}",
+                "common_variables": {
+                    "R1_first": "AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC",
+                    "R1_end": "ATCTCGTATGCCGTCTTCTGCTTG",
+                    "R2_rev_end": "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT",
+                    "R2_rev_first": "GTGTAGATCTCGGTGGTCGCCGTATCATT"
+                }
+            },
+            "quality_and_indices": {
+                "1": {
+                    "trim_end": "-q 15,15",
+                    "trim_start": "-u 0"
+                    },
+                "2": {
+                    "trim_end": "-q 15,15",
+                    "trim_start": "-u 0"
+                    },
+                "variable_template": "-n 3 --minimum-length 31 -a {R1_first}{R1_index}{R1_end} -G '^CGTGTGCTCTTCCGATCT' -A {R2_rev_end}{R2_rev_index}{R2_rev_first}",
+                "common_variables": {
+                    "R1_first": "AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC",
+                    "R1_end": "ATCTCGTATGCCGTCTTCTGCTTG",
+                    "R2_rev_end": "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT",
+                    "R2_rev_first": "GTGTAGATCTCGGTGGTCGCCGTATCATT"
+                }
+            }
+        }
+    },
+    "fastuniq_rules": {
+    },
+    "megahit_rules": {
+        "load_env": "",
+        "assembly_params": {"default": "", "meta-sensitive": "--presets meta-sensitive"},
+        "coassembly_params": {"default": "-m 0.99 --continue"},
+        "filter_length_script": "BLUEPRINT_pipeline/toolbox/scripts/filter_fasta_on_length.py",
+        "split_in_parts_script": "BLUEPRINT_pipeline/toolbox/scripts/split_fasta.py",
+        "coassembly_pre_annotation_length_threshold": "1000",
+        "coassembly_pre_annotation_sequences_per_part": "20000"
+    },
+    "prokka_extended_rules": {
+        "dbs": ["cog", "pfam", "tigr"],
+        "prokka_name": "prokka_mod",
+        "load_env": "source activate concoct && module load bioinfo-tools BioPerl blast/2.2.28+ hmmer prodigal/2.6.3 gnuparallel",
+        "cddid_all": "/proj/b2010008/nobackup/database/cddid_all.tbl",
+        "get_prokka_annotation_script": "BLUEPRINT_pipeline/toolbox/scripts/extended_prokka/get.prokka.annotation.py",
+        "collate_annotations_script": "BLUEPRINT_pipeline/toolbox/scripts/extended_prokka/collate.annotations.py",
+        "gff_to_bed_script": "BLUEPRINT_pipeline/toolbox/scripts/extended_prokka/prokkagff2bed.sh", 
+        "cog_categories_script": "toolbox/scripts/extended_prokka/cog_categories.py",
+        "cog_categories_data": "toolbox/scripts/extended_prokka/data/cogs.csv",
+        "prokka_ops": "--metagenome",
+        "EXTEND": {
+            "gff": "BLUEPRINT_pipeline/toolbox/scripts/extended_prokka/extend_gff.py"
+        },
+        "contigs": {},
+        "threads": "4",
+        "locustags": {},
+        "include_evalue_for_tables": "true",
+        "rpsblast_parameter_set": {
+            "pfam": "only-evalue",
+            "cog": "default-concoct",
+            "tigr": "default-concoct"
+        },
+        "multiple_annotations_per_gene": {
+            "pfam": "true",
+            "cog": "false",
+            "tigr": "false"
+        }
+    }, 
+    "python2": "~/miniconda/envs/BLUEPRINT_pipeline_2.7/bin/python2.7",
+    "bowtie2_quant_rules": {
+        "load_env": "source activate basic_sandbox && module load bioinfo-tools BEDTools/2.25.0",
+        "load_htseq_env": "module load bioinfo-tools htseq/0.6.1",
+        "gene_prediction": "prodigal_default-meta",
+        "references": {},
+        "samples": {},
+        "units": {},
+        "count_units": ["rpkm", "tpm", "raw_counts"],
+        "reference_for_ref_set": {},
+        "mapping_params": {
+            "default": ""
+        },
+        "prodigal_parameters_used": "default-meta",
+        "mapper": "bowtie2",
+        "scripts_dir": "~/repos/CONCOCT/scripts",
+        "rpkm_table_script": "BLUEPRINT_pipeline/toolbox/scripts/rpkm_table.py",
+        "tpm_table_script": "BLUEPRINT_pipeline/toolbox/scripts/tpm_table.py",
+        "raw_counts_table_script": "BLUEPRINT_pipeline/toolbox/scripts/raw_counts.py",
+        "coverage_for_genes_script": "BLUEPRINT_pipeline/toolbox/scripts/extended_prokka/get_gene_coverage.py",
+        "split_ref_sets": {},
+        "rpkm_annotations_table_script": "BLUEPRINT_pipeline/toolbox/scripts/rpkm_annotations_table.py"
+    },
+    "taxonomic_annotation": {
+        "load_env": "module load bioinfo-tools diamond/0.8.26 MEGAN/5.11.3",
+        "databases_to_use": ["nr"],
+        "diamond": {
+            "load_env": "module load bioinfo-tools diamond/0.8.26",
+            "databases": {
+                "nr": "/sw/data/uppnex/diamond_databases/Blast/20161202/nr.dmnd"
+            }
+        },
+        "megan": {
+            "tax_gi_file": "/proj/b2010008/nobackup/database/gi_taxid-March2015X.bin",
+            "max_evalue": "0.000001",
+            "license_file": "/proj/b2014214/src/MEGAN5-academic-license.txt"
+        },
+        "lca_script": {
+            "load_env": "source activate BLUEPRINT_pipeline",
+            "lca_script": "BLUEPRINT_pipeline/toolbox/scripts/taxonomy_from_genes_to_contigs/lca_per_contig.py",
+            "ncbi_tree": "/proj/b2014214/nobackup/databases/megan/ncbi.tre",
+            "ncbi_map": "/proj/b2014214/nobackup/databases/megan/ncbi.map",
+            "nodes_dmp": "/proj/b2014214/nobackup/databases/megan/nodes.dmp"
+        }
+    },
+    "internal_standards": {
+        "load_env": "module load bioinfo-tools bamtools/2.3.0",
+        "mapping_params": "default",
+        "sample_to_references": {},
+        "samples": []
+    },
+    "eggnog_rules": {
+        "load_env": "module load gnuparallel bioinfo-tools hmmer/3.1b2 && source activate basic_sandbox",
+        "db_path": "/proj/b2014214/nobackup/databases/NOG/EggNOG.hmmer",
+        "hmmsearch_params": "--noali --cpu 2",
+        "max_eval_first_filtering": "0.0001",
+        "keep_top_score_script": "BLUEPRINT_pipeline/toolbox/scripts/hmmer_filtering/keep_top_score.py"
+    },
+    "dbcan_rules": {
+        "load_env": "module load gnuparallel bioinfo-tools hmmer/3.1b2 && source activate basic_sandbox",
+        "db_path": "/proj/b2014214/nobackup/databases/dbCAN/dbCAN-fam-HMMs.txt.v5",
+        "hmmscan_params": "--noali --cpu 2",
+        "max_eval_first_filtering": "0.0001",
+        "dbcan_parser_script": "BLUEPRINT_pipeline/toolbox/third_party_scripts/dbcan/hmmscan-parser.sh",
+        "dbcan_strict_filtering_script": "BLUEPRINT_pipeline/toolbox/scripts/hmmer_filtering/dbcan_strict_filtering.py"
+    },
+    "pfam_rules": {
+        "load_env": "module load gnuparallel bioinfo-tools pfam_scan/1.5 && source activate basic_sandbox",
+        "db_path": "/proj/b2014214/nobackup/databases/Pfam/30.0"
+    }
+}
