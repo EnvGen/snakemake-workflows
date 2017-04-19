@@ -4,6 +4,12 @@ import os
 def all_samples():
     return [d.split('/')[-1] for d in glob.glob("samples/*") if os.path.isdir(d)]
 
+def locustag_for_sample(wildcards, default, config):
+    try:
+        return config["prokka_extended_rules"]["locustags"][wildcards.sample]
+    except KeyError:
+        return default 
+
 rule prokka_extended_run:
     input: 
         lambda wildcards: config["prokka_extended_rules"]["contigs"][wildcards.sample]
@@ -12,29 +18,32 @@ rule prokka_extended_run:
     params:
         PROKKA_OPS = config["prokka_extended_rules"]['prokka_ops'],
         PROKKA_NAME = config["prokka_extended_rules"]['prokka_name'],
-        threads = config["prokka_extended_rules"]["threads"]
+        threads = config["prokka_extended_rules"]["threads"],
+        locustag = lambda wildcards: locustag_for_sample(wildcards, "PROKKA_MOD", config)
     run:
         regex = re.compile('\.(\w*)')
         outdir = "annotation/prokka_extended/prokka_output/{wildcards.sample}"
+        if params.locustag == "PROKKA_MOD":
+            Warning("Locustag for sample {} is PROKKA_MOD, if this sample is a part of a bigger dataset, consider using a unique locustag".format(wildcards.sample))
+
         shell("""{{config[prokka_extended_rules][load_env]}}
-                {{params.PROKKA_NAME}} --cpus 16 {{input}} --outdir {0} {{params.PROKKA_OPS}} --force --norrna --notrna && drop_prokka_date.py {0}""".format(outdir))
+                {{params.PROKKA_NAME}} --cpus 16 {{input}} --outdir {0} {{params.PROKKA_OPS}} --force --norrna --notrna --prefix PROKKA --locustag {{params.locustag}}""".format(outdir))
 
 
 
-rule prokka_extended_run_rpsblast:
-    input: "annotation/prokka_extended/prokka_output/{{sample}}/PROKKA.{0}".format('faa')
-    output: "annotation/prokka_extended/rpsblast/{sample}/PROKKA_{db}.out"
-    run:
-        db_cap_name = wildcards.db.capitalize()
-        outdir = "rpsblast/{0}".format(wildcards.sample)
-        shell("""{config[prokka_extended_rules][load_env]} && mkdir -p {outdir} && rpsblast -num_threads 4 -outfmt "6 qseqid sseqid evalue pident score qstart qend sstart send length slen" -max_target_seqs 1 -evalue 0.00001 -query {input} -db '/proj/b2010008/nobackup/database/{db_cap_name}_uppnex/{db_cap_name}' -out {output}""")
-
-
+def rpsblast_parameter_db_combo(wildcards):
+    files = []
+    for db in config["prokka_extended_rules"]["dbs"]:
+        parameters = config["prokka_extended_rules"]["rpsblast_parameter_set"][db]
+        files.append("blast/rpsblast/{parameters}/{db}/{{sample}}/rpsblast.out".format(db=db, parameters=parameters).format(**wildcards))
+    return files
+        
 
 # This one is a bit tricky, it needs to be run in serial
 rule prokka_extended_output:
-    input: blast_output = ["annotation/prokka_extended/rpsblast/{{sample}}/PROKKA_{0}.out".format(db) for db in config["prokka_extended_rules"]["dbs"]],
-           ext_file = "annotation/prokka_extended/prokka_output/{sample}/PROKKA.{ext}"
+    input: 
+        blast_output = lambda wildcards: rpsblast_parameter_db_combo(wildcards),
+        ext_file = "annotation/prokka_extended/prokka_output/{sample}/PROKKA.{ext}"
     output: "annotation/prokka_extended/prokka_extended/{sample}/PROKKA.all.{ext}"
     params:
         cddid_all = config["prokka_extended_rules"]["cddid_all"]
@@ -43,12 +52,16 @@ rule prokka_extended_output:
         cmds = ["{config[prokka_extended_rules][load_env]} && mkdir -p prokka_extended"]
         ext = wildcards.ext
         extend_bin = config["prokka_extended_rules"]["EXTEND"][ext]
-        db_regex = re.compile('PROKKA_(\w*).out')
+        db_regex = re.compile('/(\w*)/[^/]*/rpsblast.out')
         for blast_file in input.blast_output:
             db = db_regex.findall(blast_file)[0]
+            if config["prokka_extended_rules"]["multiple_annotations_per_gene"][db] == "true":
+                ma_per_gene = "--multiple-annotations-per-gene"
+            else:
+                ma_per_gene = ""
             output_ext = input_ext.replace(".{0}".format(ext), '.{0}.{1}'.format(db, ext))
             outdir = "prokka_extended/{0}".format(wildcards.sample)
-            cmds.append("mkdir -p {0} && {{extend_bin}} -b {1} -g {2} --cddid_all_file {{params.cddid_all}} --include-evalue --include-pident > {3}".format(outdir, blast_file, input_ext, output_ext))
+            cmds.append("mkdir -p {0} && {{extend_bin}} -b {1} -g {2} --cddid_all_file {{params.cddid_all}} --include-evalue --include-pident {3} > {4}".format(outdir, blast_file, input_ext, ma_per_gene, output_ext))
             input_ext = output_ext
         cmds.append("cp {0} {{output}}".format(output_ext))
         cmd = " && ".join(cmds)
@@ -63,10 +76,17 @@ rule prokka_extended_get_prokka_annotation:
     input: "annotation/prokka_extended/prokka_extended/{sample}/PROKKA.all.gff"
     output: "annotation/prokka_extended/summary_per_sample/{sample}/{sample}.{type}.tsv"
     params:
-        get_prokka_annotation_script = config["prokka_extended_rules"]["get_prokka_annotation_script"]
+        get_prokka_annotation_script = config["prokka_extended_rules"]["get_prokka_annotation_script"],
+        with_evalue = "--with_evalue" if config["prokka_extended_rules"]["include_evalue_for_tables"] == "true" else ""
     shell:
         """{config[prokka_extended_rules][load_env]}
-            bash {params.get_prokka_annotation_script} {input} {wildcards.type} > {output}"""
+            python {params.get_prokka_annotation_script} {input} {wildcards.type} {params.with_evalue} > {output}"""
+
+rule prokka_extended_get_prokka_annotation_all_samples:
+    input: expand("annotation/prokka_extended/summary_per_sample/{sample}/{sample}.{{type}}.tsv", sample = config["prokka_extended_rules"]["contigs"])
+    output: "annotation/prokka_extended/summary_annotation/{type}.tsv" 
+    shell:
+        """cat {input} > {output}"""
 
 rule prokka_extended_collate_annotations:
     input: expand("annotation/prokka_extended/summary_per_sample/{sample}/{sample}.{{type}}.tsv", sample=config["prokka_extended_rules"]["contigs"])
@@ -77,21 +97,26 @@ rule prokka_extended_collate_annotations:
         """{config[prokka_extended_rules][load_env]}
             python {params.collate_annotations_script} <(for file in {input}; do echo $file; done ) > {output}"""
 
+
 rule prokka_extended_summarize_all:
     input: expand("annotation/prokka_extended/summary_table/all.{type}.tsv", type=[db.upper() for db in config["prokka_extended_rules"]["dbs"]])
 
-rule prokka_extended_rename_before_merge_annotated_sequences:
-    input: "annotation/prokka_extended/prokka_output/{sample}/PROKKA.ffn" 
-    output: "annotation/prokka_extended/prokka_output/{sample}/PROKKA_renamed.ffn"
+rule prokka_summarize_cog_categories:
+    input: "annotation/prokka_extended/summary_per_sample/{sample}/{sample}.COG.tsv"
+    output: "annotation/prokka_extended/summary_per_sample/{sample}/COG_categories.tsv"
     params:
-        rename_script = config["prokka_extended_rules"]["rename_fasta_script"]
+        cog_categories_data = config["prokka_extended_rules"]["cog_categories_data"],
+        cog_categories_script = config["prokka_extended_rules"]["cog_categories_script"]
     shell:
-       """{config[prokka_extended_rules][load_env]}
-            python {params.rename_script} {input} -s {wildcards.sample} > {output}
-       """
+        """{config[prokka_extended_rules][load_env]}
+            python {params.cog_categories_script} {input} {params.cog_categories_data} > {output}"""
+
+rule prokka_summarize_cog_categories_all:
+    input: expand("annotation/prokka_extended/summary_per_sample/{sample}/COG_categories.tsv", sample=config["prokka_extended_rules"]["contigs"])
+
 
 rule prokka_extended_merge_annotated_sequences:
-    input: lambda wildcards: expand("annotation/prokka_extended/prokka_output/{sample}/PROKKA_renamed.ffn", sample=config["prokka_extended_rules"]["merging_sample_sets"][wildcards.sample_set])
+    input: lambda wildcards: expand("annotation/prokka_extended/prokka_output/{sample}/PROKKA.ffn", sample=config["prokka_extended_rules"]["merging_sample_sets"][wildcards.sample_set])
     output: "annotation/prokka_extended/all_annotated_sequences/{sample_set}/PROKKA.ffn"
     shell:
         """cat {input} > {output}"""
@@ -100,3 +125,38 @@ rule prokka_extended_merge_annotated_sequences_all:
     input: 
         expand("annotation/prokka_extended/all_annotated_sequences/{sample_set}/PROKKA.ffn", 
             sample_set=config["prokka_extended_rules"]["merging_sample_sets"])
+
+rule prokka_extended_gff_to_bed:
+    input: "annotation/prokka_extended/prokka_output/{sample}/PROKKA.gff"
+    output: "annotation/prokka_extended/prokka_output/{sample}/PROKKA.bed"
+    params:
+        gff_to_bed_script = config["prokka_extended_rules"]["gff_to_bed_script"]
+    shell:
+        """{params.gff_to_bed_script} {input} > {output}"""
+
+rule prokka_extended_merge_bed:
+    input: lambda wildcards: expand("annotation/prokka_extended/prokka_output/{sample}/PROKKA.bed", sample=config["prokka_extended_rules"]["merging_sample_sets"][wildcards.sample_set])
+    output:
+        "annotation/prokka_extended/all_genes_as_bed/{sample_set}/PROKKA.bed"
+    shell:
+        """cat {input} > {output}"""
+
+# Warning, this is very unstable. 
+# Will only work if you all contigs are named k99
+rule prokka_extended_gff_to_gff2:
+    input:
+        "annotation/prokka_extended/prokka_extended/{sample}/PROKKA.all.gff",
+    output:
+        "annotation/prokka_extended/prokka_extended/{sample}/PROKKA.all.gff2"
+    shell: 
+        """grep '^k99' {input} > {output}
+        """
+
+rule prokka_extended_merge_gff_to_gff2:
+    input: 
+        lambda wildcards: sorted(expand("annotation/prokka_extended/prokka_extended/{sample}/PROKKA.all.gff2", sample=config["prokka_extended_rules"]["merging_sample_sets"][wildcards.sample_set]))
+    output:
+        "annotation/prokka_extended/all_annotated_sequences/{sample_set}/PROKKA.all.gff2"
+    shell:
+        """for prokka_file in {input}; do cat $prokka_file >> {output}; done
+        """

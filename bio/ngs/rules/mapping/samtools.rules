@@ -33,10 +33,12 @@ rule bam_sort:
         "{prefix}.bam"
     output:
         "{prefix}.sorted.bam"
+    params:
+        threads = config["samtools_rules"]["threads_for_sorting"],
     shell:
         """
         {config[samtools_rules][load_env]}
-        samtools sort {input} {wildcards.prefix}.sorted
+        samtools sort -m 7G -@ {params.threads} -O 'bam' {input} > {output}
         """
 
 
@@ -45,24 +47,13 @@ rule bam_sort_name:
         "{prefix}.bam"
     output:
         "{prefix}.namesorted.bam"
+    params:
+        threads = config["samtools_rules"]["threads_for_sorting"]
     shell:
         """
         {config[samtools_rules][load_env]}
-        samtools sort -n {input} {wildcards.prefix}.namesorted
+        samtools sort -m 7G -@ {params.threads} -O 'bam' -n {input} > {output}
         """
-
-
-rule sam_to_bam:
-    input:
-        "{prefix}.sam"
-    output:
-        "{prefix}.bam"
-    shell:
-        """
-        {config[samtools_rules][load_env]}
-        samtools view -Sbh {input} > {output}
-        """
-
 
 rule bam_stats:
     input:
@@ -132,6 +123,7 @@ rule remove_mark_duplicates:
             -jar {config[samtools_rules][picard_jars]}/MarkDuplicates.jar \
             INPUT={input} \
             OUTPUT={output[0]} \
+            COMPRESSION_LEVEL=9 \
             METRICS_FILE={output[1]} \
             AS=TRUE \
             VALIDATION_STRINGENCY=LENIENT \
@@ -165,6 +157,29 @@ rule sample_merge:
             reference=wildcards.reference)
     output:
         "mapping/bowtie2/{mapping_params}/{reference}/samples/{sample}.sorted.removeduplicates.bam"
+    run:
+        if len(input) > 1:
+            shell("{config[samtools_rules][load_env]} && "
+                  "samtools merge {output} {input}")
+        else:
+            shell("ln -fs ../units/{basename} {{output}} && touch -h "
+                  "{{output}}".format(basename=os.path.basename(input[0])))
+
+ruleorder: remove_mark_duplicates > sample_merge
+
+rule sample_merge_no_rmdup:
+    """
+    Merge bam files for multiple units into one for the given sample.
+    If the sample has only one unit, a symlink will be created.
+    """
+    input:
+        lambda wildcards: expand(
+            "mapping/bowtie2/{mapping_params}/{reference}/units/{unit}.bam",
+            unit=config["bowtie2_rules"]["samples"][wildcards.sample],
+            mapping_params=wildcards.mapping_params,
+            reference=wildcards.reference)
+    output:
+        "mapping/bowtie2/{mapping_params}/{reference}/samples/{sample}.bam"
     run:
         if len(input) > 1:
             shell("{config[samtools_rules][load_env]} && "

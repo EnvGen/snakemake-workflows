@@ -1,0 +1,16 @@
+rule ec_standardize_collate_annotations:
+    input:
+        eggnog_annotation = "annotation/EggNOG/summary_annotation/{gene_prediction}/all.EggNOG.standardized.tsv",
+        eggnog_to_ec = "nog.ec.tsv"
+    output:
+        "annotation/EC/summary_annotation/{gene_prediction}/all.EC.standardized.tsv"
+    params:
+        assign_ec_from_nog_script = config["ec_rules"]["assign_ec_from_nog_script"]
+    shell:
+        """
+            python {params.assign_ec_from_nog_script} {input.eggnog_annotation} {input.eggnog_to_ec} > {output}
+        """
+
+rule ec_collate_annotation_all:
+    input:
+        expand("annotation/EC/summary_annotation/{gene_prediction}/all.EC.standardized.tsv", gene_prediction=config["annotation_rules"]["gene_prediction"])

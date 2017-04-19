@@ -1,0 +1,119 @@
+rule taxonomy_annotation_diamond_search:
+    input:
+        protein_fasta = "annotation/prodigal_default-meta/genes/{sample}/proteins/proteins.faa",
+        db = lambda wildcards: config['taxonomic_annotation']['diamond']['databases'][wildcards.db]
+    output:
+        daa_output = "taxonomy_annotation/diamond/{db}/{sample_set}/{sample}/search_result.daa",
+        unaligned = "taxonomy_annotation/diamond/{db}/{sample_set}/{sample}/unaligned.faa"
+    params:
+        load_env = config['taxonomic_annotation']['diamond']['load_env']
+    shell: 
+        "{params.load_env} && diamond blastp --threads 16 -t $SNIC_TMP --top 10 --seg yes --sensitive --query {input.protein_fasta} --db {input.db} --daa {output.daa_output} --un {output.unaligned}"
+
+rule taxonomy_annotation_diamond_view_to_tab:
+    input:
+        "taxonomy_annotation/diamond/{db}/{sample_set}/{sample}/search_result.daa"
+    output:
+        "taxonomy_annotation/diamond/{db}/{sample_set}/{sample}/search_result.tab"
+    params:
+        load_env = config['taxonomic_annotation']['diamond']['load_env']
+    shell:
+        "{params.load_env} && diamond view --outfmt tab --out {output} --daa {input}"
+
+megan_commands_template = """load taxGIFile='{tax_gi_file}';
+disable taxa='12908';
+disable taxa='28384';
+import blastFile='{search_result}' meganFile='{megan_output}' maxMatches=100 minScore=50.0 maxExpected={max_evalue} topPercent=10.0 minSupport=1 minComplexity=0.0 useMinimalCoverageHeuristic=false useSeed=false useCOG=false useKegg=false paired=false useIdentityFilter=false blastFormat=BlastTAB mapping='Taxonomy:GI_MAP=true';
+collapse rank='Species';
+select rank='Species';
+select nodes=all;
+export what=CSV format=readname_taxonpath separator=comma file={taxon_path_file};
+export what=CSV format=readname_taxonid separator=comma file={taxon_id_file};
+quit;"""
+
+rule taxonomy_annotation_megan_taxid_and_path:
+    input: 
+        search_result = "taxonomy_annotation/diamond/{db}/{sample_set}/{sample}/search_result.tab"
+    output:
+        taxon_path_file = "taxonomy_annotation/megan/{db}/{sample_set}/{sample}/taxon_path.txt",
+        taxon_id_file = "taxonomy_annotation/megan/{db}/{sample_set}/{sample}/taxon_id.txt",
+        megan_rma_output = "taxonomy_annotation/megan/{db}/{sample_set}/{sample}/megan_output.rma",
+        commands_file = "taxonomy_annotation/megan/{db}/{sample_set}/{sample}/commands.txt"
+    params:
+        tax_gi_file = config['taxonomic_annotation']['megan']['tax_gi_file'],
+        e_value = config['taxonomic_annotation']['megan']['max_evalue'],
+        megan_license_file = config['taxonomic_annotation']['megan']['license_file']
+    run:
+        commands_text = megan_commands_template.format(**{'tax_gi_file': params.tax_gi_file, 
+                                            'search_result': input.search_result,
+                                            'megan_output': output.megan_rma_output,
+                                            'max_evalue': params.e_value,
+                                            'taxon_path_file': output.taxon_path_file,
+                                            'taxon_id_file': output.taxon_id_file})
+        with open(output.commands_file, 'w') as commands_fh:
+            print(commands_text, file=commands_fh) 
+        shell("{load_env} \n xvfb-run --auto-servernum --server-num=1 MEGAN -L {megan_license_file} -g -E -c {commands_file}".format(
+                **{'load_env': config['taxonomic_annotation']['load_env'],
+                   'megan_license_file': params.megan_license_file,
+                   'commands_file': output.commands_file}))
+
+rule taxonomy_annotation_megan_per_contig_lca:
+    input:
+        taxon_id = "taxonomy_annotation/megan/{db}/{sample_set}/{sample}/taxon_id.txt",
+        bed_file = "annotation/prokka_extended/prokka_output/{sample}/PROKKA.bed"
+    output:
+        no_lca = "taxonomy_annotation/megan/{db}/{sample_set}/{sample}/no_lca_classification.csv",
+        lca = "taxonomy_annotation/megan/{db}/{sample_set}/{sample}/lca_classification.csv"
+    params:
+        lca_script = config["taxonomic_annotation"]["lca_script"]["lca_script"],
+        ncbi_tree = config["taxonomic_annotation"]["lca_script"]["ncbi_tree"],
+        ncbi_map = config["taxonomic_annotation"]["lca_script"]["ncbi_map"],
+        nodes_dmp = config["taxonomic_annotation"]["lca_script"]["nodes_dmp"],
+        load_env = config['taxonomic_annotation']['lca_script']['load_env']
+    shell:
+        """{params.load_env} && python {params.lca_script} --ncbi_tree_file {params.ncbi_tree} --ncbi_map_file {params.ncbi_map} --nodes_file {params.nodes_dmp} --megan_result {input.taxon_id} --bed_file {input.bed_file} --no_lca_out {output.no_lca} --lca_out {output.lca}"""
+        
+rule taxonomy_annotation_megan_merge:
+    input:
+        taxon_ids = lambda wildcards: expand(
+            "taxonomy_annotation/megan/{db}/{sample_set}/{sample}/taxon_id.txt",
+            sample = config["taxonomic_annotation"]["sample_sets"][wildcards.sample_set],
+            db = wildcards.db,
+            sample_set = wildcards.sample_set
+        ),
+        taxon_paths = lambda wildcards: expand(
+            "taxonomy_annotation/megan/{db}/{sample_set}/{sample}/taxon_path.txt",
+            sample = config["taxonomic_annotation"]["sample_sets"][wildcards.sample_set],
+            db = wildcards.db,
+            sample_set = wildcards.sample_set
+        )
+    output:
+        taxon_id = "taxonomy_annotation/megan/{db}/{sample_set}/taxon_id.txt",
+        taxon_path = "taxonomy_annotation/megan/{db}/{sample_set}/taxon_path.txt"
+    shell:
+        """cat {input.taxon_ids} > {output.taxon_id}
+            cat {input.taxon_paths} > {output.taxon_path}"""
+
+rule taxonomy_annotation_megan_merge_lca:
+    input:
+        lca = lambda wildcards: expand(
+            "taxonomy_annotation/megan/{db}/{sample_set}/{sample}/lca_classification.csv",
+            sample = config["taxonomic_annotation"]["sample_sets"][wildcards.sample_set],
+            db = wildcards.db,
+            sample_set = wildcards.sample_set
+        )
+    output:
+        lca = "taxonomy_annotation/megan/{db}/{sample_set}/lca_classification.csv"
+    shell:
+        """cat {input.lca} > {output.lca}"""
+
+rule taxonomy_annotation_megan_all:
+    input: expand("taxonomy_annotation/megan/{db}/{sample_set}/taxon_id.txt", \
+        db=config["taxonomic_annotation"]["databases_to_use"], \
+        sample_set=config["taxonomic_annotation"]["sample_sets"])
+
+rule taxonomy_annotation_lca_per_contig_all:
+    input: expand("taxonomy_annotation/megan/{db}/{sample_set}/lca_classification.csv", \
+        db=config["taxonomic_annotation"]["databases_to_use"], \
+        sample_set=config["taxonomic_annotation"]["sample_sets"])
+

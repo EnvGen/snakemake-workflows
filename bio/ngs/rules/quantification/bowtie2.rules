@@ -1,0 +1,198 @@
+import os
+import glob
+
+# Check values in config file
+CONFIG_REQS = ["references", "samples", "mapping_params", "scripts_dir"]
+if "bowtie2_quant_rules" not in config:
+    raise(Exception("bowtie2_quant key not in config file"))
+for cr in CONFIG_REQS:
+    if cr not in config["bowtie2_quant_rules"]:
+        raise(Exception("{cr} not in bowtie2_quant_rules config file".format(cr=cr)))
+
+def histogram_bam_input(mapping_params, sample, reference):
+    if sample in config["bowtie2_quant_rules"]["rna_samples"]:
+        bam_ending = ".namesorted.bam"
+    else:
+        bam_ending = ".removeduplicates.namesorted.bam"
+
+    bam_unformatted_s = "mapping/bowtie2/{mapping_params}/{reference}/samples/{sample}.sorted{bam_ending}"
+    return bam_unformatted_s.format(
+                mapping_params = mapping_params,
+                sample = sample,            
+                reference = reference,
+                bam_ending = bam_ending)
+
+
+rule bowtie2_quant_genes_htseq_counts:
+    input:
+        bam = lambda wildcards: histogram_bam_input(
+                    wildcards.mapping_params, 
+                    wildcards.sample, 
+                    config["bowtie2_quant_rules"]["reference_for_ref_set"][wildcards.split_ref_set]),
+        gff2 = lambda wildcards: "annotation/{gene_prediction}/all_annotated_sequences/{split_ref_set}/proteins.gff2".format(gene_prediction=config["bowtie2_quant_rules"]["gene_prediction"], split_ref_set=wildcards.split_ref_set)
+    output:
+        htseq_counts = "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/{sample}/read_counts.htseq.tsv.gz"
+    shell:
+        """
+            {config[bowtie2_quant_rules][load_htseq_env]}
+            htseq-count -f 'bam' -r 'name' -s 'no' -a 0 -t 'CDS' -i 'ID' -m 'union' {input.bam} {input.gff2} | gzip > {output}
+        """
+
+rule bowtie2_quant_genes_histogram:
+    input:
+        bam = lambda wildcards: histogram_bam_input(
+                    wildcards.mapping_params, 
+                    wildcards.sample, 
+                    config["bowtie2_quant_rules"]["reference_for_ref_set"][wildcards.split_ref_set]),
+        bed = lambda wildcards: "annotation/{gene_prediction}/all_annotated_sequences/{split_ref_set}/proteins.bed".format(gene_prediction=config["bowtie2_quant_rules"]["gene_prediction"], split_ref_set=wildcards.split_ref_set)
+    output:
+        histogram = ("quantification/bowtie2_genes/{mapping_params}/"
+                    "{split_ref_set}/{sample}/histogram.tsv"),
+    shell:
+        """
+        {config[bowtie2_quant_rules][load_env]}
+        bedtools coverage -hist -a {input.bed} -b {input.bam} > {output.histogram}
+        """
+
+rule bowtie2_quant_genes:
+    input:
+        histogram = ("quantification/bowtie2_genes/{mapping_params}/"
+                    "{split_ref_set}/{sample}/histogram.tsv")
+    output:
+        coverage = ("quantification/bowtie2_genes/{mapping_params}/"
+                    "{split_ref_set}/{sample}/avg_cov.tsv.gz")
+    params:
+        coverage_for_genes = config["bowtie2_quant_rules"]["coverage_for_genes_script"]
+    shell:
+        """
+        {config[bowtie2_quant_rules][load_env]}
+        {params.coverage_for_genes} {input.histogram} | gzip > {output.coverage}
+        """
+
+
+rule bowtie2_quant_coverage_table:
+    input:
+        asm=lambda wildcards: config["bowtie2_quant_rules"]["references"][wildcards.reference],
+        bedcovs=expand(("mapping/{mapper}/{mapping_params}/{{reference}}/samples/"
+                        "{sample}.sorted.removeduplicates.coverage.tsv"),
+                   sample=config["bowtie2_quant_rules"]["samples"],
+                   mapper=config["bowtie2_quant_rules"]["mapper"],
+                   mapping_params=config["bowtie2_quant_rules"]["mapping_params"])
+    output:
+        "quantification/bowtie2/{reference}/avg_cov.tsv.gz",
+    params:
+        sample_names=sorted(config["bowtie2_quant_rules"]["samples"])
+    shell:
+        """
+        {config[bowtie2_quant_rules][load_env]}
+        python {config[bowtie2_quant_rules][scripts_dir]}/gen_input_table.py --isbedfiles \
+            --samplenames <(for sample in {params.sample_names}; do echo $sample; done) \
+                {input.asm} {input.bedcovs} | gzip \
+                > {output}
+        """
+
+rule bowtie2_quant_coverage_table_all:
+    input: 
+        expand("quantification/bowtie2/{reference}/avg_cov.tsv.gz",
+            reference=config["bowtie2_quant_rules"]["references"])
+
+rule bowtie2_rpkm_gene_table:
+    input:
+        coverage = lambda wildcards: expand("quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/{sample}/avg_cov.tsv.gz", 
+            mapping_params = wildcards.mapping_params,
+            split_ref_set = wildcards.split_ref_set,
+            sample = config["bowtie2_quant_rules"]["sample_groups"][wildcards.sample_group]
+        ),
+        sample_info = "quantification/bowtie2_genes/sample_info_with_nr_reads.tsv"
+    output:
+        "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/{sample_group}/rpkm_table.tsv.gz"
+    run:
+        sample_names = ["/".join([os.path.dirname(fn).split('/')[-1]]) for fn in input.coverage]
+        shell("""{config[bowtie2_quant_rules][load_env]}
+            python {config[bowtie2_quant_rules][rpkm_table_script]} \
+                --sample_names {sample_names} \
+                --coverage_files {input.coverage} \
+                --sample_info {input.sample_info}  | gzip > {output}
+        """)
+
+
+rule bowtie2_tpm_gene_table:
+    input:
+        counts = lambda wildcards: expand("quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/{sample}/read_counts.htseq.tsv.gz", 
+            mapping_params = wildcards.mapping_params,
+            split_ref_set = wildcards.split_ref_set,
+            sample = config["bowtie2_quant_rules"]["sample_groups"][wildcards.sample_group]
+        ),
+        sample_info = "quantification/bowtie2_genes/sample_info.tsv",
+        gene_lengths = lambda wildcards: "annotation/{gene_prediction}/all_annotated_sequences/{split_ref_set}/gene_lengths.tsv".format(gene_prediction = config["bowtie2_quant_rules"]["gene_prediction"], split_ref_set = wildcards.split_ref_set) 
+    output:
+        "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/{sample_group}/tpm_table.tsv.gz"
+    run:
+        sample_names = ["/".join([os.path.dirname(fn).split('/')[-1]]) for fn in input.counts]
+        shell("""{config[bowtie2_quant_rules][load_env]}
+            python {config[bowtie2_quant_rules][tpm_table_script]} \
+                --sample_names {sample_names} \
+                --coverage_files {input.counts} \
+                --sample_info {input.sample_info} \
+                --gene_lengths {input.gene_lengths} \
+                --input_compression 'gzip'  | gzip > {output}
+        """)
+
+
+rule bowtie2_raw_counts_gene_table:
+    input:
+        counts = lambda wildcards: expand("quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/{sample}/read_counts.htseq.tsv.gz", 
+            mapping_params = wildcards.mapping_params,
+            split_ref_set = wildcards.split_ref_set,
+            sample = config["bowtie2_quant_rules"]["sample_groups"][wildcards.sample_group]
+        ),
+        gene_lengths = lambda wildcards: "annotation/{gene_prediction}/all_annotated_sequences/{split_ref_set}/gene_lengths.tsv".format(gene_prediction = config["bowtie2_quant_rules"]["gene_prediction"], split_ref_set = wildcards.split_ref_set) 
+    output:
+        "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/{sample_group}/raw_counts_table.tsv.gz"
+    run:
+        sample_names = ["/".join([os.path.dirname(fn).split('/')[-1]]) for fn in input.counts]
+        shell("""{config[bowtie2_quant_rules][load_env]}
+            python {config[bowtie2_quant_rules][raw_counts_table_script]} \
+                --sample_names {sample_names} \
+                --coverage_files {input.counts} \
+                --gene_lengths {input.gene_lengths} \
+                --input_compression 'gzip' | gzip > {output}
+        """)
+
+rule bowtie2_quant_rpkm_gene_all:
+    input:
+        expand("quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/{sample_group}/{count_unit}_table.tsv.gz",
+            mapping_params = config["bowtie2_quant_rules"]["mapping_params"], \
+            split_ref_set = config["bowtie2_quant_rules"]["split_ref_sets"], \
+            sample_group = config["bowtie2_quant_rules"]["sample_groups"], \
+            count_unit = config["bowtie2_quant_rules"]["count_units"]
+        )
+
+
+rule bowtie2_quant_coverage_annotation_table:
+    input:
+        counts_table = "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/{sample_group}/{count_unit}_table.tsv.gz",
+        annotation_table = lambda wildcards: expand("annotation/{type}/summary_annotation/{gene_prediction}/all.{type}.standardized.tsv", type=wildcards.type,gene_prediction=config["bowtie2_quant_rules"]["gene_prediction"]),
+        annotation_info = "annotation/annotation_info/{type}/annotation_info.tsv"
+    output:
+        "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/annotations/{sample_group}/{type}.{count_unit}.annotated.tsv.gz"
+    params:
+        counts_annotations_table_script = config["bowtie2_quant_rules"]["rpkm_annotations_table_script"],
+        tmp_dir = config["global_tmp_dir"]
+    shell:
+        """{config[bowtie2_quant_rules][load_env]}
+            python {params.counts_annotations_table_script} {input.counts_table} {input.annotation_table} > {params.tmp_dir}/unannotated.tsv
+            join -t '	' <(tail -n +2 {input.annotation_info} | sort -k 1b,1) <(tail -n +2 {params.tmp_dir}/unannotated.tsv | sort -k 1b,1) > {params.tmp_dir}/annotated_no_head.tsv
+            paste <(head -n 1 {input.annotation_info}) <(head -n 1 {params.tmp_dir}/unannotated.tsv | cut -f 2- ) > {params.tmp_dir}/header.tsv
+            cat {params.tmp_dir}/header.tsv {params.tmp_dir}/annotated_no_head.tsv | gzip > {output}
+            rm {params.tmp_dir}/annotated_no_head.tsv {params.tmp_dir}/header.tsv {params.tmp_dir}/unannotated.tsv
+        """
+
+rule bowtie2_quant_coverage_annotation_table_all:
+    input: expand("quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/annotations/{sample_group}/{type}.{count_unit}.annotated.tsv.gz", \
+        mapping_params = config["bowtie2_quant_rules"]["mapping_params"], \
+        split_ref_set = config["bowtie2_quant_rules"]["split_ref_sets"], \
+        type = config["prodigal_rules"]["dbs"], \
+        sample_group = config["bowtie2_quant_rules"]["sample_groups"], \
+        count_unit = config["bowtie2_quant_rules"]["count_units"])
+

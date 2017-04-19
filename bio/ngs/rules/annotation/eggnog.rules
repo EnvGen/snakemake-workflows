@@ -1,0 +1,81 @@
+rule run_eggnog:
+    input:
+        "annotation/{gene_prediction}/genes/{assembly}/proteins/proteins.faa"
+    output:
+        tsv = "annotation/EggNOG/{gene_prediction}/{assembly}/hmm_result.tsv",
+        txt = "annotation/EggNOG/{gene_prediction}/{assembly}/hmm_report.txt"
+    params:
+        egg_nog_db = config["eggnog_rules"]["db_path"],
+        hmmsearch_params = config["eggnog_rules"]["hmmsearch_params"]
+    shell: 
+        """{config[eggnog_rules][load_env]};
+           input_basename=`basename {input}`;
+           database_basename=`basename {params.egg_nog_db}`;
+           cp {params.egg_nog_db}.h3* $SNIC_TMP/;
+           cp {input} $SNIC_TMP/;
+           hmmsearch -o {output.txt} {params.hmmsearch_params} --tblout {output.tsv} $SNIC_TMP/$database_basename $SNIC_TMP/$input_basename""" 
+
+
+
+rule eggnog_filter_output:
+    input:
+        "annotation/EggNOG/{gene_prediction}/{assembly}/hmm_result.tsv"
+    output:
+        filtered_result = "annotation/EggNOG/{gene_prediction}/{assembly}/hmm_result.filtered.tsv",
+        header_comments = "annotation/EggNOG/{gene_prediction}/{assembly}/hmm_result.filtered.head"
+    params:
+        max_eval = config["eggnog_rules"]["max_eval_first_filtering"]
+    shell:
+        """
+        grep '^#' {input} > {output.header_comments};
+        grep -v '^#' {input} | awk '{{if ($5 < {params.max_eval}) print}}' > {output.filtered_result}
+        """
+
+rule eggnog_sort_on_score:
+    input:
+        "annotation/EggNOG/{gene_prediction}/{assembly}/hmm_result.filtered.tsv"
+    output:
+        "annotation/EggNOG/{gene_prediction}/{assembly}/hmm_result.filtered.score_sorted.tsv"
+    shell:
+        """
+            sort --numeric-sort --reverse --key=6,6 {input} | sed -e 's/\s\s*/\t/g' > {output}
+        """
+
+rule eggnog_keep_only_top_score:
+    input:
+        "annotation/EggNOG/{gene_prediction}/{assembly}/hmm_result.filtered.score_sorted.tsv"
+    output:
+        "annotation/EggNOG/{gene_prediction}/{assembly}/hmm_result.filtered.score_sorted.only_top.tsv"
+    params:
+        keep_top_score_script = config["eggnog_rules"]["keep_top_score_script"]
+    shell:
+        """{config[eggnog_rules][load_env]}
+           python {params.keep_top_score_script} {input} | sort --key=3,3 > {output} 
+        """
+
+rule eggnog_annotate_all:
+    input: expand("annotation/EggNOG/{gene_prediction}/{assembly}/hmm_result.filtered.score_sorted.only_top.tsv", gene_prediction=config["annotation_rules"]["gene_prediction"], assembly=config["assemblies"])
+
+rule eggnog_collate_annotations:
+    input:
+        lambda wildcards: expand("annotation/EggNOG/{gene_prediction}/{assembly}/hmm_result.filtered.score_sorted.only_top.tsv", gene_prediction=wildcards.gene_prediction, assembly=config["assemblies"])
+    output:
+        "annotation/EggNOG/summary_annotation/{gene_prediction}/all.EggNOG.tsv"
+    shell:
+        """
+            sort --merge --key=3,3 {input} > {output}
+        """
+
+rule eggnog_standardize_collate_annotations:
+    input:
+        "annotation/EggNOG/summary_annotation/{gene_prediction}/all.EggNOG.tsv"
+    output:
+        "annotation/EggNOG/summary_annotation/{gene_prediction}/all.EggNOG.standardized.tsv"
+    shell:
+        """
+            awk '{{print $1,$3,$5,$6}}' {input} | tr ' ' '\t' | sed 's/NOG\.\(\w*\)\.\w*	/\\1	/g' > {output}
+        """
+
+rule eggnog_collate_annotation_all:
+    input:
+        expand("annotation/EggNOG/summary_annotation/{gene_prediction}/all.EggNOG.standardized.tsv", gene_prediction=config["annotation_rules"]["gene_prediction"])

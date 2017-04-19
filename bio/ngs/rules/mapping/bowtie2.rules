@@ -88,7 +88,7 @@ rule bowtie2_map:
         sam="mapping/bowtie2/{mapping_params}/{reference}/units/{unit,\w+}.sam"
     log:
         "mapping/bowtie2/{mapping_params}/{reference}/units/{unit,\w+}.log"
-    threads: 4
+    threads: 16
     shell:
         """
         {config[bowtie2_rules][load_env]}
@@ -102,3 +102,50 @@ rule bowtie2_map:
         samtools view -Sbh {params.sam} > {output} && \
         rm {params.sam}
         """
+
+rule bowtie2_index_large:
+    input:
+        lambda wildcards: config["bowtie2_rules"]["references"][wildcards.reference]
+    output:
+        expand("mapping/bowtie2/{{reference}}.{index}.bt2l", index=range(1,5)),
+        expand("mapping/bowtie2/{{reference}}.rev.{index}.bt2l", index=range(1,3))
+    params:
+        prefix="mapping/bowtie2/{reference}"
+    shell:
+        """
+        {config[bowtie2_rules][load_env]}
+        bowtie2-build {input} {params.prefix}
+        """
+
+
+rule bowtie2_map_large:
+    input:
+        lambda wildcards: config["bowtie2_rules"]["units"][wildcards.unit],
+        expand("mapping/bowtie2/{{reference}}.{index}.bt2l", index=range(1,5)),
+        expand("mapping/bowtie2/{{reference}}.rev.{index}.bt2l", index=range(1,3))
+    output:
+        "mapping/bowtie2/{mapping_params}/{reference}/units/{unit,\w+}.bam"
+    params:
+        sample=lambda wildcards: UNIT_TO_SAMPLE[wildcards.unit],
+        custom=lambda wildcards: config["bowtie2_rules"]["mapping_params"][wildcards.mapping_params],
+        read_input_str=lambda wildcards: create_bowtie2_read_input_str(config["bowtie2_rules"]["units"][wildcards.unit]),
+        ref_idx_base="mapping/bowtie2/{reference}",
+        sam="mapping/bowtie2/{mapping_params}/{reference}/units/{unit,\w+}.sam"
+    log:
+        "mapping/bowtie2/{mapping_params}/{reference}/units/{unit,\w+}.log"
+    threads: 16
+    shell:
+        """
+        {config[bowtie2_rules][load_env]}
+        bowtie2 {params.custom} \
+        --rg-id '{wildcards.unit}' \
+        --rg 'SM:{params.sample}\\tPL:{config[bowtie2_rules][platform]}' \
+        -x {params.ref_idx_base} \
+        -p {threads} {params.read_input_str} \
+        -S {params.sam} \
+        2> {log} && \
+        samtools view -Sbh {params.sam} > {output} && \
+        rm {params.sam}
+        """
+
+ruleorder: bowtie2_map > bowtie2_map_large

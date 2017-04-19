@@ -1,0 +1,49 @@
+rule run_pfam:
+    input:
+        "annotation/{gene_prediction}/genes/{assembly}/proteins/proteins.faa"
+    output:
+        tsv = "annotation/pfam/{gene_prediction}/{assembly}/hmm_result.tsv"
+    params:
+        pfam_db = config["pfam_rules"]["db_path"]
+    shell: 
+        """{config[pfam_rules][load_env]};
+           input_basename=`basename {input}`;
+           database_basename=`basename {params.pfam_db}`;
+           cp -r {params.pfam_db} $SNIC_TMP/;
+           cp {input} $SNIC_TMP/;
+           pfam_scan.pl -fasta $SNIC_TMP/$input_basename -dir $SNIC_TMP/$database_basename -outfile {output.tsv}
+        """
+
+rule pfam_sort_on_name:
+    input:
+        "annotation/pfam/{gene_prediction}/{assembly}/hmm_result.tsv"
+    output:
+        "annotation/pfam/{gene_prediction}/{assembly}/hmm_result.sorted.tsv"
+    shell:
+        """
+            grep -v '^#' {input} | tail -n+2 | sed 's/\s\s*/ /g' | sort -k 6,6 -k 1,1 > {output}
+        """
+
+
+rule pfam_collate_annotations:
+    input: lambda wildcards: expand("annotation/pfam/{gene_prediction}/{assembly}/hmm_result.sorted.tsv", gene_prediction=wildcards.gene_prediction,  assembly=config["assemblies"])
+    output:
+        "annotation/pfam/summary_annotation/{gene_prediction}/all.pfam.tsv"
+    shell:
+        """
+            sort --merge -k6,6 -k1,1 {input} | sed 's/\s\s*/	/g' > {output}
+        """
+
+rule pfam_standardize_collate_annotations:
+    input:
+        "annotation/pfam/summary_annotation/{gene_prediction}/all.pfam.tsv"
+    output:
+        "annotation/pfam/summary_annotation/{gene_prediction}/all.pfam.standardized.tsv"
+    shell:
+        """
+            awk '{{print $1,$6,$13,$12}}' {input} | tr ' ' '\t' | sed 's/\(PF[0-9]*\)\.\w*/\\1/g' > {output} 
+        """
+
+rule pfam_collate_annotation_all:
+    input:
+        expand("annotation/pfam/summary_annotation/{gene_prediction}/all.pfam.standardized.tsv", gene_prediction=config["annotation_rules"]["gene_prediction"])

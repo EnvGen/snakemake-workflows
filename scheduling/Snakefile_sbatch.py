@@ -2,7 +2,7 @@
 """
 Submit this clustering script for sbatch to snakemake with:
 
-    snakemake -j 99 --debug --immediate-submit --cluster 'Snakefile-sbatch.py {dependencies}'
+    snakemake -j 99 --debug --immediate-submit --cluster 'Snakefile_sbatch.py {dependencies}'
 """
 import argparse
 import sys
@@ -32,6 +32,7 @@ class SnakeJob:
         self.rule = job_properties['rule']
         self.ifiles = job_properties['input']
         self.ofiles = job_properties['output']
+        self.params = job_properties['params']
         if dependencies == None or len(dependencies) < 1:
             self.dependencies = None
         else:
@@ -54,6 +55,8 @@ class SnakeJobSbatch(SnakeJob):
             self.dep_str = ''
         else:
             self.dep_str = '-d ' + ','.join(["afterok:%s" % d for d in self.dependencies])
+        if os.path.isfile('config_file_size.json'):
+            self.file_size_conf = json.load(open("config_file_size.json"))
 
     def schedule(self):
         """Schedules a snakemake job with sbatch and determines resource usage
@@ -89,6 +92,15 @@ class SnakeJobSbatch(SnakeJob):
                     'log_file': self.ofiles[0] + '-slurm.out' if len(self.ofiles) > 0 else 'snakemake-{0}-slurm.out'.format(self.rule),
                     'extra_parameters': rule_conf.get('extra_parameters', "")
             }
+            if "cores_per_filesize" in rule_conf:
+                file_type = rule_conf["cores_per_filesize"]["file"]
+                file_size = float(self.file_size_conf[self.params["sample_name"]][file_type])
+                cores_exponent = float(rule_conf["cores_per_filesize"]["exponent_of_Gb"])
+                cores_factor = rule_conf["cores_per_filesize"]["factor_per_Gb"]
+                attributes['cores'] = int(math.ceil((file_size**cores_exponent)*cores_factor))
+                if attributes['cores'] > 16:
+                    attributes['cores'] = 16 # This is the hard limit on nr of cores on our cluster
+
             sbatch_cmd = """sbatch --output={log_file} {dep_str} -A {account} -p {partition} -n {cores} -t {days}-{hours}:{minutes}:00 \
                     -J {job_name} {extra_parameters} {sbatch_job_path} \
                     '{script_name}'""".format(**attributes)
