@@ -126,12 +126,15 @@ for read_file in glob.glob("finished_reads/*.fq.gz"):
         config["bowtie2_rules"]["samples"][sample_name] = [sample_name]
 
 config['concoct_rules']['assemblies'] = {}
-for assembly_file in glob.glob("assembly/megahit/default/*/final.contigs.fa"):
+for assembly_file in glob.glob("assembly/megahit/*/*/final.contigs.fa*"):
+    assembly_type = assembly_file.split('/')[2]
     sample_name = assembly_file.split('/')[3]
-    config['concoct_rules']['assemblies'][sample_name] = assembly_file
+    config['concoct_rules']['assemblies'][assembly_type + '_' + sample_name] = assembly_file
 
 #  add 10K cutup as references for bowtie2 to map against
 config["bowtie2_rules"].setdefault("references", {}).update({a + "_10K": "concoct/{a}/cutup/contigs_10K.fasta".format(a=a) for a in config["concoct_rules"]["assemblies"]})
+config["kallisto_rules"]["references"] = config["bowtie2_rules"]["references"]
+config["kallisto_rules"]["samples"] = config["bowtie2_rules"]["units"]
 
 rule concoct_cutup_10K:
     input:
@@ -152,6 +155,7 @@ rule concoct_cutup_10K:
 WORKFLOW_DIR = "../../"
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/mapping/samtools.rules")
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/mapping/bowtie2.rules")
+include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/quantification/kallisto.rules")
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/trimming/cutadapt.rules")
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/quality_control/fastqc.rules")
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/duplicate_removal/fastuniq.rules")

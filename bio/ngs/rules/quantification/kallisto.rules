@@ -9,32 +9,19 @@ rule kallisto_index:
         kallisto index {input} -i {output}
         """
 
-# rule kallisto_quant:
-#     input:
-#         reads=lambda wildcards: config["kallisto_rules"]["units"][wildcards.unit],
-#         index="quantification/kallisto/indices/{reference}.kaix"
-#     output:
-#         "quantification/kallisto/quant/{reference}/units/{unit}/abundance.tsv"
-#     params:
-#         outdir = "quantification/kallisto/quant/{reference}/units/{unit}"
-#     shell:
-#         """
-#         {config[kallisto_rules][load_env]}
-#         kallisto quant --plaintext -i {input.index} -o {params.outdir} {input.reads}
-#         """
-
 rule kallisto_quant_sample:
     input:
         reads=lambda wildcards: config["kallisto_rules"]["samples"][wildcards.sample],
         index="quantification/kallisto/indices/{reference}.kaix"
     output:
-        "quantification/kallisto/quant/{reference}/samples/{sample}/abundance.tsv"
+        "quantification/kallisto/quant/{reference}/samples/{sample}/abundance.tsv.gz"
     params:
         outdir = "quantification/kallisto/quant/{reference}/samples/{sample}"
     shell:
         """
         {config[kallisto_rules][load_env]}
-        kallisto quant --plaintext -i {input.index} -o {params.outdir} {input.reads}
+        kallisto quant --threads 16 --plaintext -i {input.index} -o {params.outdir} {input.reads}
+        gzip {params.outdir}/abundance.tsv
         """
 
 rule kallisto_sample_merge:
@@ -67,11 +54,10 @@ rule kallisto_quant_all:
 
 rule kallisto_concoct_inputtable:
     input:
-        expand("quantification/kallisto/quant/{reference}/samples/{sample}/abundance.tsv",
-            reference=config["kallisto_rules"]["references"],
+        lambda wildcards: expand("quantification/kallisto/quant/{reference}_10K/samples/{{sample}}/abundance.tsv.gz".format(reference=wildcards.assembly),
             sample=config["kallisto_rules"]["samples"])
     output:
-        "concoct/{assembly}/input/concoct_inputtableR.tsv"
+        "concoct/{assembly}/input_kallisto/concoct_inputtableR.tsv"
     params:
         sample_names=sorted(config["kallisto_rules"]["samples"])
     shell:

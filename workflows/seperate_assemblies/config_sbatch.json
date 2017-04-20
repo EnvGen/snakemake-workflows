@@ -128,5 +128,29 @@
         "extra_parameters": ""
     },
     "schedule_sample_merge_no_rmdup": "schedule_short",
-    "schedule_bedtools_coverage": "schedule_bowtie2_map"
+    "schedule_bedtools_coverage": "schedule_bowtie2_map",
+    "schedule_kallisto_index": {
+        "days": 0,
+        "hours": 6,
+        "minutes": 0,
+        "partition": "node",
+        "cores": "16",
+        "extra_parameters": ""
+    },
+    "schedule_kallisto_quant_sample": {
+        "days": 0,
+        "hours": 2,
+        "minutes": 0,
+        "partition": "node",
+        "cores": "16",
+        "extra_parameters": ""
+    },
+    "schedule_kallisto_concoct_inputtable": {
+        "days": 0,
+        "hours": 6,
+        "minutes": 0,
+        "partition": "core",
+        "cores": "1",
+        "extra_parameters": ""
+    }
 }

@@ -14,6 +14,10 @@
         "threads_for_sorting": "16"
     },
     "mapping_report_rules": {},
+    "kallisto_rules": {
+        "load_env": "module load bioinfo-tools kallisto/0.43.0",
+        "inputtable_script":  "toolbox/scripts/kallisto_concoct/input_table.py"
+    },
     "concoct_rules": {
         "load_env": "source activate concoct && module load bioinfo-tools MUMmer/3.23 # CONCOCT dev f4cb9fcb",
         "mapper": "bowtie2",
