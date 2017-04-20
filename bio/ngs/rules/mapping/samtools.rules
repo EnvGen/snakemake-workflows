@@ -54,16 +54,16 @@ rule bam_sort_name:
         """
 
 
-rule sam_to_bam:
-    input:
-        "{prefix}.sam"
-    output:
-        "{prefix}.bam"
-    shell:
-        """
-        {config[samtools_rules][load_env]}
-        samtools view -Sbh {input} > {output}
-        """
+#rule sam_to_bam:
+#    input:
+#        "{prefix}.sam"
+#    output:
+#        "{prefix}.bam"
+#    shell:
+#        """
+#        {config[samtools_rules][load_env]}
+#        samtools view -Sbh {input} > {output}
+#        """
 
 
 rule bam_stats:
