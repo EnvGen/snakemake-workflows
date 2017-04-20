@@ -64,3 +64,11 @@ rule prodigal_gene_lengths:
         """
             cat {input} | cut -f4,5,9 | sed 's/ID=\(\w*\);.*/\\1/g' | gawk '{{print $3,$2-$1+1}}' | tr ' ' '\t' > {output}
         """
+
+rule prodigal_gff_to_bed:
+    input: "{prefix}.gff2"
+    output: "{prefix}.bed"
+    params:
+        gff_to_bed_script = config["prokka_extended_rules"]["gff_to_bed_script"]
+    shell:
+        """{params.gff_to_bed_script} {input} > {output}"""

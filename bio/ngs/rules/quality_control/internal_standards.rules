@@ -13,12 +13,6 @@ __author__ = "Johannes Alneberg"
 __license__ = "MIT"
 
 
-# bowtie2 map to reference sequence
-# bamtools split
-# syncronize read pairs?
-# unmapped bam file can be deleted after reads have been extracted
-# mapped bam file should be sorted and indexed to simplify vizualisation
-
 rule internal_standards_link_mapping:
     input:
         lambda wildcards: "mapping/bowtie2/{mapping_params}/{internal_reference}/units/{sample}.bam".format(mapping_params = config["internal_standards"]["mapping_params"],
@@ -29,7 +23,6 @@ rule internal_standards_link_mapping:
     shell:
         """ln -s ../../{input} {output}"""
 
-ruleorder: internal_standards_link_mapping > sam_to_bam
  
 rule internal_standards_bamtools_split:
     input:
@@ -79,7 +72,7 @@ rule internal_standards_sync_mapped_bam:
         load_env = config["internal_standards"]["load_env"]
     shell:
         """{params.load_env}
-           bamtools filter -isMateMapped false -in {input} -out {output}"""
+           bamtools filter -isMateMapped true -in {input} -out {output}"""
 
 rule internal_standards_mapped_bam_to_fastq:
     input:

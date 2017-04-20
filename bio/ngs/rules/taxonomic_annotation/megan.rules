@@ -1,19 +1,24 @@
 rule taxonomy_annotation_diamond_search:
     input:
-        protein_fasta = "annotation/prokka_extended/prokka_output/{sample}/PROKKA.faa",
+        protein_fasta = "annotation/prodigal_default-meta/genes/{sample}/proteins/proteins.faa",
         db = lambda wildcards: config['taxonomic_annotation']['diamond']['databases'][wildcards.db]
     output:
-        daa_output = "taxonomy_annotation/diamond/{db}/{sample_set}/{sample}/search_result.daa" 
+        daa_output = "taxonomy_annotation/diamond/{db}/{sample_set}/{sample}/search_result.daa",
+        unaligned = "taxonomy_annotation/diamond/{db}/{sample_set}/{sample}/unaligned.faa"
+    params:
+        load_env = config['taxonomic_annotation']['diamond']['load_env']
     shell: 
-        "diamond blastp --threads 16 --query {input.protein_fasta} --db {input.db} --daa {output.daa_output}"
+        "{params.load_env} && diamond blastp --threads 16 -t $SNIC_TMP --top 10 --seg yes --sensitive --query {input.protein_fasta} --db {input.db} --daa {output.daa_output} --un {output.unaligned}"
 
 rule taxonomy_annotation_diamond_view_to_tab:
     input:
         "taxonomy_annotation/diamond/{db}/{sample_set}/{sample}/search_result.daa"
     output:
         "taxonomy_annotation/diamond/{db}/{sample_set}/{sample}/search_result.tab"
+    params:
+        load_env = config['taxonomic_annotation']['diamond']['load_env']
     shell:
-        "diamond view --outfmt tab --out {output} --daa {input}"
+        "{params.load_env} && diamond view --outfmt tab --out {output} --daa {input}"
 
 megan_commands_template = """load taxGIFile='{tax_gi_file}';
 disable taxa='12908';
