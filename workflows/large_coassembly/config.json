@@ -98,7 +98,7 @@
     "fastuniq_rules": {
     },
     "megahit_rules": {
-        "load_env": "",
+        "load_env": "source activate snakemake_python2_env",
         "assembly_params": {"default": ""},
         "coassembly_params": {"default": "-m 0.99", "meta-sensitive": "--presets meta-sensitive"},
         "filter_length_script": "toolbox/scripts/filter_fasta_on_length.py",
