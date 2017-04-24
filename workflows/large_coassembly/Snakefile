@@ -92,7 +92,7 @@ if os.path.isfile("sample_groups.json"):
 else:
     sample_groups = {"all_samples": config["megahit_rules"]["samples"].keys()}
 
-for contigs_f in glob.glob("assembly/megahit_coassembly/default/parts/contigs.*.fasta"):
+for contigs_f in glob.glob("assembly/megahit_coassembly/meta-sensitive/parts/contigs.*.fasta"):
     part = contigs_f.split('.')[-2]
     config["prokka_extended_rules"]["contigs"]['megahit_coassembly.{}'.format(part)] = contigs_f
     config["prokka_extended_rules"]["locustags"]['megahit_coassembly.{}'.format(part)] = "PROKKA_MOD_PART{}".format(part)
