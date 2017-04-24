@@ -132,25 +132,9 @@ for assembly_file in glob.glob("assembly/megahit/*/*/final.contigs.fa*"):
     config['concoct_rules']['assemblies'][assembly_type + '_' + sample_name] = assembly_file
 
 #  add 10K cutup as references for bowtie2 to map against
-config["bowtie2_rules"].setdefault("references", {}).update({a + "_10K": "concoct/{a}/cutup/contigs_10K.fasta".format(a=a) for a in config["concoct_rules"]["assemblies"]})
+config["bowtie2_rules"].setdefault("references", {}).update({a + "_10K": "concoct/{a}/cutup/contigs_10K.fasta.gz".format(a=a) for a in config["concoct_rules"]["assemblies"]})
 config["kallisto_rules"]["references"] = config["bowtie2_rules"]["references"]
 config["kallisto_rules"]["samples"] = config["bowtie2_rules"]["units"]
-
-rule concoct_cutup_10K:
-    input:
-        lambda wildcards: config["concoct_rules"]["assemblies"][wildcards.assembly]
-    output:
-        "concoct/{assembly}/cutup/contigs_10K.fasta"
-    params:
-        chunk_size="10000",
-        overlap="0"
-    threads: 1
-    shell:
-        """
-        {config[concoct_rules][load_env]}
-        python {config[concoct_rules][scripts_dir]}/cut_up_fasta.py -c {params.chunk_size} -o {params.overlap} \
-            -m {input} > {output}
-        """
 
 WORKFLOW_DIR = "../../"
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/mapping/samtools.rules")
@@ -160,6 +144,7 @@ include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/trimming/cutadapt.rules")
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/quality_control/fastqc.rules")
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/duplicate_removal/fastuniq.rules")
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/assembly/megahit.rules")
+include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/binning/concoct.rules")
 
 rule preprocess_all:
     input:
