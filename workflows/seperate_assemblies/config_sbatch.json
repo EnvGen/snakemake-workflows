@@ -1,6 +1,6 @@
 {
     "sbatch_general": {
-        "account": "b2014214",
+        "account": "b2010008",
         "wrapper_script": "/proj/b2010008/bin/sbatch_job"
     },
     "schedule_short": {
