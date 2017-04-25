@@ -68,12 +68,12 @@ rule megahit_coassemble:
     run:
         read_input_str = create_megahit_coassembly_paired_read_input_str(input)
         shell("""{config[megahit_rules][load_env]}
-        rm -rf assembly/megahit/{wildcards.assembly_params}/{wildcards.sample}/tmp 
+        rm -rf assembly/megahit/{wildcards.assembly_params}/tmp 
         megahit {params.custom} \
-        {read_input_str} 
-        -o assembly/megahit_coassembly/{wildcards.assembly_params}/{wildcards.sample}/tmp 
-        mv assembly/megahit_coassembly/{wildcards.assembly_params}/{wildcards.sample}/tmp/* \
-           assembly/megahit_coassembly/{wildcards.assembly_params}/{wildcards.sample}/
+        {read_input_str} \
+        -o assembly/megahit_coassembly/{wildcards.assembly_params}/tmp 
+        mv assembly/megahit_coassembly/{wildcards.assembly_params}/tmp/* \
+           assembly/megahit_coassembly/{wildcards.assembly_params}/
         """)
 
 rule megahit_coassemble_all:
@@ -93,7 +93,7 @@ rule megahit_coassemble_split:
         outdir = "assembly/megahit_coassembly/{assembly_params}/parts/"
     shell:
         """
-           {config[megahit_rules][load_env]}
+           set +u; {config[megahit_rules][load_env]}; set -u;
            python {params.filter_length_script} --input_fasta {input} \
            -l {params.length_threshold} | python {params.split_in_parts_script} \
            --prefix "contigs" -o {params.outdir} {params.sequences_per_part}

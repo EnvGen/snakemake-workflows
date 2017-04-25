@@ -26,7 +26,7 @@ rule prokka_extended_run:
         if params.locustag == "PROKKA_MOD":
             Warning("Locustag for sample {} is PROKKA_MOD, if this sample is a part of a bigger dataset, consider using a unique locustag".format(wildcards.sample))
 
-        shell("""{{config[prokka_extended_rules][load_env]}}
+        shell("""set +u; {{config[prokka_extended_rules][load_env]}}; set -u;
                 {{params.PROKKA_NAME}} --cpus 16 {{input}} --outdir {0} {{params.PROKKA_OPS}} --force --norrna --notrna --prefix PROKKA --locustag {{params.locustag}}""".format(outdir))
 
 

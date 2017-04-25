@@ -92,7 +92,7 @@ if os.path.isfile("sample_groups.json"):
 else:
     sample_groups = {"all_samples": config["megahit_rules"]["samples"].keys()}
 
-for contigs_f in glob.glob("assembly/megahit_coassembly/default/parts/contigs.*.fasta"):
+for contigs_f in glob.glob("assembly/megahit_coassembly/meta-sensitive/parts/contigs.*.fasta"):
     part = contigs_f.split('.')[-2]
     config["prokka_extended_rules"]["contigs"]['megahit_coassembly.{}'.format(part)] = contigs_f
     config["prokka_extended_rules"]["locustags"]['megahit_coassembly.{}'.format(part)] = "PROKKA_MOD_PART{}".format(part)
@@ -105,6 +105,7 @@ config["prokka_extended_rules"]["merging_sample_sets"]["megahit_coassembly"] = [
 for contigs_name, contigs_f in config["prokka_extended_rules"]["contigs"].items():
     if contigs_name.startswith("megahit_coassembly"):
         config["prokka_extended_rules"]["merging_sample_sets"]["megahit_coassembly"].append(contigs_name)
+
 
 config["prokka_extended_rules"]["merging_sample_sets"]["megahit_coassembly"].sort(key= lambda x: int(x.split('.')[-1]))
 
@@ -171,6 +172,16 @@ config["bowtie2_rules"]["units"] = config["bowtie2_quant_rules"]["units"]
 config["bowtie2_rules"]["samples"] = config["bowtie2_quant_rules"]["samples"]
 config["bowtie2_rules"]["mapping_params"] = config["bowtie2_quant_rules"]["mapping_params"]
 
+config['concoct_rules']['assemblies'] = {}
+for assembly_file in glob.glob("assembly/megahit/*/*/final.contigs.fa*"):
+    assembly_type = assembly_file.split('/')[2]
+    sample_name = assembly_file.split('/')[3]
+    a = assembly_type + '_' + sample_name
+    config['concoct_rules']['assemblies'][a] = assembly_file
+
+    #  add 10K cutup as references for bowtie2 to map against
+    config["bowtie2_rules"]["references"][a + "_10K"] = "concoct/{a}/cutup/contigs_10K.fasta.gz".format(a=a)
+
 # Add reads that will go through internal standards protocol before added to the pipeline
 for read_file in glob.glob("only_for_mapping/with_internal_standards/*/*.fq.gz"):
     read_basename = os.path.basename(read_file)
@@ -187,6 +198,9 @@ for read_file in glob.glob("only_for_mapping/with_internal_standards/*/*.fq.gz")
     else:
         config["bowtie2_rules"]["units"][sample_name] = [read_file]
         config["bowtie2_rules"]["samples"][sample_name] = [sample_name]
+
+config["kallisto_rules"]["references"] = config["bowtie2_rules"]["references"]
+config["kallisto_rules"]["samples"] = config["bowtie2_rules"]["units"]
 
 config["taxonomic_annotation"]["sample_sets"] = config['bowtie2_quant_rules']["split_ref_sets"]
 
@@ -209,7 +223,7 @@ include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/annotation/prokka.rules")
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/quantification/bowtie2.rules")
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/taxonomic_annotation/megan.rules")
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/quality_control/internal_standards.rules")
-
+include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/quantification/kallisto.rules")
 
 # The index is large, need to use .bt2l indices
 ruleorder: bowtie2_map_large > bowtie2_map
