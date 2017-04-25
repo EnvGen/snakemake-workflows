@@ -434,6 +434,22 @@
     "schedule_eggnog_standardize_collate_annotations": "schedule_short",
     "schedule_pfam_standardize_collate_annotations": "schedule_short",
     "schedule_prodigal_gff_to_bed": "schedule_one_core_medium",
+    "schedule_kallisto_index": {
+        "days": 0,
+        "hours": 6,
+        "minutes": 0,
+        "partition": "node",
+        "cores": "16",
+        "extra_parameters": ""
+    },
+    "schedule_kallisto_quant_sample": {
+        "days": 0,
+        "hours": 2,
+        "minutes": 0,
+        "partition": "node",
+        "cores": "16",
+        "extra_parameters": ""
+    },
     "schedule_concoct_cutup_10K": {
         "days": 0,
         "hours": 3,
