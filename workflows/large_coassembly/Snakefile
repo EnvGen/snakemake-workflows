@@ -188,6 +188,9 @@ for read_file in glob.glob("only_for_mapping/with_internal_standards/*/*.fq.gz")
         config["bowtie2_rules"]["units"][sample_name] = [read_file]
         config["bowtie2_rules"]["samples"][sample_name] = [sample_name]
 
+config["kallisto_rules"]["references"] = config["bowtie2_rules"]["references"]
+config["kallisto_rules"]["samples"] = config["bowtie2_rules"]["units"]
+
 config["taxonomic_annotation"]["sample_sets"] = config['bowtie2_quant_rules']["split_ref_sets"]
 
 
