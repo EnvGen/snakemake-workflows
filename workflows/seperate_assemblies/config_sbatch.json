@@ -167,5 +167,7 @@
         "partition": "core",
         "cores": "1",
         "extra_parameters": ""
-    }
+    },
+    "schedule_concoct_merge_cutup_contigs": "schedule_short",
+    "schedule_concoct_extract_all_bins_nocutup": "schedule_short"
 }

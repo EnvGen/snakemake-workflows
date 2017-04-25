@@ -25,8 +25,12 @@
         "concoct_params": {
             "cutoff-1000-maxcluster-1000": "-c 1000 -l 1000"
         },
+        "dnadiff_tmp_dir": "$SNIC_TMP",
+        "merge_clustering_script": "toolbox/scripts/concoct/merge_cutup_clustering.py",
+        "extract_bins_script": "toolbox/scripts/concoct/extract_fasta_bins.py",
         "scripts_dir": "CONCOCT/scripts"
     },
+    "hmmer_rules": {},
     "prodigal_rules": {
         "load_env": "module load bioinfo-tools prodigal/2.6.3 && source activate basic_sandbox",
         "length_script": "BLUEPRINT_pipeline/toolbox/scripts/fasta_lengths.py",
