@@ -26,7 +26,7 @@ rule concoct_cutup_10K:
     threads: 1
     shell:
         """
-        {config[concoct_rules][load_env]}
+        set +u; {config[concoct_rules][load_env]}; set-u;
         python {config[concoct_rules][scripts_dir]}/cut_up_fasta.py -c {params.chunk_size} -o {params.overlap} \
             -m {input} > {output}
         """
@@ -43,7 +43,7 @@ rule concoct_cutup_10K_zip:
     threads: 1
     shell:
         """
-        {config[concoct_rules][load_env]}
+        set +u; {config[concoct_rules][load_env]}; set -u;
         python {config[concoct_rules][scripts_dir]}/cut_up_fasta.py -c {params.chunk_size} -o {params.overlap} \
             -m <(zcat {input}) | gzip -c > {output}
         """
@@ -62,7 +62,7 @@ rule concoct_generate_coverage_table_10K:
         sample_names=sorted(config["bowtie2_rules"]["samples"])
     shell:
         """
-        {config[concoct_rules][load_env]}
+        set +u; {config[concoct_rules][load_env]}; set -u;
         python {config[concoct_rules][scripts_dir]}/gen_input_table.py --isbedfiles \
             --samplenames <(for s in {params.sample_names}; do echo $s; done) \
                 {input.asm} {input.bedcovs} \
@@ -90,7 +90,7 @@ rule concoct_run_10K:
         concoct_params=lambda wildcards: config["concoct_rules"]["concoct_params"][wildcards.cparams]
     shell:
         """
-        {config[concoct_rules][load_env]}
+        set +u; {config[concoct_rules][load_env]}; set -u;
         concoct {params.concoct_params} \
             --coverage_file {input.input_table} \
             --composition_file <(zcat {input.asm}) \
