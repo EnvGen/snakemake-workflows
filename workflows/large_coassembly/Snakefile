@@ -233,6 +233,7 @@ include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/quantification/bowtie2.rules"
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/taxonomic_annotation/megan.rules")
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/quality_control/internal_standards.rules")
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/quantification/kallisto.rules")
+include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/binning/concoct.rules")
 
 # The index is large, need to use .bt2l indices
 ruleorder: bowtie2_map_large > bowtie2_map
