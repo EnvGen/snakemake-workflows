@@ -27,7 +27,7 @@
         },
         "dnadiff_tmp_dir": "$SNIC_TMP",
         "merge_clustering_script": "toolbox/scripts/concoct/merge_cutup_clustering.py",
-        "extract_bins_script": "toolbox/scripts/concoct/extract_fasta_bins.py"
+        "extract_bins_script": "toolbox/scripts/concoct/extract_fasta_bins.py",
         "scripts_dir": "CONCOCT/scripts"
     },
     "hmmer_rules": {},
