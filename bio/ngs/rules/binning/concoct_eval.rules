@@ -1,140 +1,39 @@
 import itertools
 
-#  add 10K cutup as assemblies for prodigal to predict genes for
-config["prodigal_rules"]["assemblies"] = {a + "_10K": "concoct/{a}/cutup/contigs_10K.fasta".format(a=a) for a in config["concoct_rules"]["assemblies"]}
-config["prodigal_rules"]["assemblies"].update(config["concoct_rules"]["assemblies"])
-
-#  add prodigal predicted genes as query for rpsblast
-config["rpsblast_rules"]["query_aas"] = {a: "annotation/prodigal/default-meta/{a}/proteins/proteins.faa".format(a=a) for a in config["prodigal_rules"]["assemblies"]}
-
-#  add prodigal predicted genes as query for hmmer
-config["hmmer_rules"]["query_aas"] = config["rpsblast_rules"]["query_aas"]
-
-rule concoct_eval_cog_table:
-    """
-    Generate COG table from rpsblast output and concoct binning results
-    """
+rule concoct_merge_cutup_contigs:
     input:
-        clust="concoct/{assembly}/output/{concoct_params}/clustering.csv",
-        rpsblast="blast/rpsblast/default-concoct/cog/{assembly}_10K/rpsblast.out"
+        "concoct/{assembly}/output_{quant}/{concoct_params}/clustering.csv"
     output:
-        "concoct/{assembly}/evaluation/scg/{concoct_params}/clustering_scg.tsv"
-    shell:
-        """
-        {config[concoct_rules][load_env]}
-        python {config[concoct_rules][scripts_dir]}/COG_table.py \
-            -b {input.rpsblast} \
-            -m {config[concoct_rules][scripts_dir]}/../scgs/scg_cogs_min0.97_max1.03_unique_genera.txt \
-            -c {input.clust} \
-            --cdd_cog_file {config[concoct_rules][scripts_dir]}/../scgs/cdd_to_cog.tsv \
-            > {output}
-        """
-
-rule concoct_eval_cog_table_nocutup:
-    """
-    Generate COG table from rpsblast output and concoct binning results
-    """
-    input:
-        clust="concoct/{assembly}/output/{concoct_params}/clustering_nocutup.csv",
-        rpsblast="blast/rpsblast/default-concoct/cog/{assembly}/rpsblast.out"
-    output:
-        "concoct/{assembly}/evaluation/scg/{concoct_params}/clustering_scg_nocutup.tsv"
-    shell:
-        """
-        {config[concoct_rules][load_env]}
-        python {config[concoct_rules][scripts_dir]}/COG_table.py \
-            -b {input.rpsblast} \
-            -m {config[concoct_rules][scripts_dir]}/../scgs/scg_cogs_min0.97_max1.03_unique_genera.txt \
-            -c {input.clust} \
-            --cdd_cog_file {config[concoct_rules][scripts_dir]}/../scgs/cdd_to_cog.tsv \
-            > {output}
-        """
-
-rule concoct_extract_all_bins:
-    input:
-        asms="concoct/{assembly}/cutup/contigs_10K.fasta",
-        clustering="concoct/{assembly}/output/{concoct_params}/clustering.csv"
-    output:
-        dynamic("concoct/{assembly}/bins/{concoct_params}/{{bin_name}}.fa")
+        "concoct/{assembly}/output_{quant}/{concoct_params}/clustering_nocutup.csv"
     params:
-        extract_script=config["concoct_rules"]["scripts_dir"] + "/extract_fasta_bins.py"
-    shell:
-        """
-            {config[concoct_rules][load_env]
-            python {params.extract_script} {input.asms} {input.clustering} \
-                 --output_path concoct/{wildcards.assembly}/bins/{wildcard.params}
-        """
- 
-rule concoct_extract_bins_all:
-    input:
-        dynamic(expand("concoct/{assembly}/bins/{concoct_params}/{{bin_name}}.fa",
-                    assembly=config["concoct_rules"]["assemblies"],
-                    concoct_params=config["concoct_rules"]["concoct_params"]))
-
-rule concoct_extract_approved_scg_bins:
-    input:
-        scg_tsvs=expand("concoct/{assembly}/evaluation/scg/{concoct_params}/clustering_scg.tsv",
-            assembly=sorted(config["concoct_rules"]["assemblies"]),
-            concoct_params=sorted(config["concoct_rules"]["concoct_params"])),
-        asms=expand("concoct/{assembly}/cutup/contigs_10K.fasta",
-            assembly=sorted(config["concoct_rules"]["assemblies"]),
-            concoct_params=sorted(config["concoct_rules"]["concoct_params"]))
-    output:
-        dynamic("concoct/approved_scg_bins/{cluster_name}.fa")
-    params:
-        names=expand("{assembly}_{concoct_params}",
-            assembly=sorted(config["concoct_rules"]["assemblies"]),
-            concoct_params=sorted(config["concoct_rules"]["concoct_params"])),
-        groups=expand("{assembly}",
-            assembly=sorted(config["concoct_rules"]["assemblies"]),
-            concoct_params=sorted(config["concoct_rules"]["concoct_params"]))
+        merge_script = config["concoct_rules"]["merge_clustering_script"]
     shell:
         """
             {config[concoct_rules][load_env]}
-            python {config[concoct_rules][scripts_dir]}/extract_scg_bins.py \
-                --output_folder concoct/approved_scg_bins \
-                --scg_tsvs {input.scg_tsvs} \
-                --fasta_files {input.asms} \
-                --names {params.names} \
-                --groups {params.groups} \
-                --max_missing_scg 5 \
-                --max_multicopy_scg 2
+            python {params.merge_script} {input} > {output}
          """
 
-def duplicate_items(nr_items, items):
-    """A list where each item in items is present nr_items times. 
 
-    The order is preserved from items"""
-    return itertools.chain([nr_items*[item]for item in items])
-
-
-rule concoct_extract_approved_scg_bins_nocutup:
+rule concoct_extract_all_bins_nocutup:
     input:
-        scg_tsvs=expand("concoct/{assembly}/evaluation/scg/{concoct_params}/clustering_scg_nocutup.tsv",
-            assembly=sorted(config["concoct_rules"]["assemblies"]),
-            concoct_params=sorted(config["concoct_rules"]["concoct_params"])),
-        asms= duplicate_items(len(config["concoct_rules"]["concoct_params"]), [config["concoct_rules"]["assemblies"][assembly] for assembly in sorted(config["concoct_rules"]["assemblies"].keys())])
+        clustering="concoct/{assembly}/output_{quant}/{concoct_params}/clustering_nocutup.csv",
+        asm=lambda wildcards: config["concoct_rules"]["assemblies"][wildcards.assembly]
     output:
-        dynamic("concoct/approved_scg_bins_nocutup/{cluster_name}.fa")
+        dynamic("concoct/{assembly}/output_{quant}/{concoct_params}/all_bins_nocutup/{cluster_name}.fa")
     params:
-        names=expand("{assembly}_{concoct_params}",
-            assembly=sorted(config["concoct_rules"]["assemblies"]),
-            concoct_params=sorted(config["concoct_rules"]["concoct_params"])),
-        groups=expand("{assembly}",
-            assembly=sorted(config["concoct_rules"]["assemblies"]),
-            concoct_params=sorted(config["concoct_rules"]["concoct_params"]))
+        extract_bins = config["concoct_rules"]["extract_bins_script"],
+        output_path = "concoct/{assembly}/output_{quant}/{concoct_params}/all_bins_nocutup"
     shell:
         """
             {config[concoct_rules][load_env]}
-            python {config[concoct_rules][scripts_dir]}/extract_scg_bins.py \
-                --output_folder concoct/approved_scg_bins_nocutup \
-                --scg_tsvs {input.scg_tsvs} \
-                --fasta_files {input.asms} \
-                --names {params.names} \
-                --groups {params.groups} \
-                --max_missing_scg 5 \
-                --max_multicopy_scg 2
-         """
+            mkdir -p {params.output_path}
+            python {params.extract_bins} <(zcat {input.asm}) {input.clustering} --output_path {params.output_path}
+        """
+
+
+rule concoct_checkm:
+    input:
+        "concoct/{assembly}/output_{quant}/{concoct_params}/all_bins_nocutup/{cluster_name}.fa"
 
 rule concoct_extract_approved_scg_bins_all:
     input:
