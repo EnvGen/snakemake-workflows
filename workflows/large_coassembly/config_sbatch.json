@@ -475,5 +475,14 @@
         "extra_parameters": ""
     },
     "schedule_concoct_merge_cutup_contigs": "schedule_short",
-    "schedule_concoct_extract_all_bins_nocutup": "schedule_short"
+    "schedule_concoct_extract_all_bins_nocutup": "schedule_short",
+    "schedule_concoct_extract_approved_scg_bins": "schedule_short",
+    "schedule_concoct_checkm": {
+        "days": 0,
+        "hours": 3,
+        "minutes": 0,
+        "partition": "core",
+        "cores": "8",
+        "extra_parameters": ""
+    }
 }
