@@ -18,13 +18,13 @@
         "inputtable_script":  "toolbox/scripts/kallisto_concoct/input_table.py"
     },
     "concoct_rules": {
-        "load_env": "source activate  && module load bioinfo-tools MUMmer/3.23 # CONCOCT dev f4cb9fcb",
+        "load_env": "source activate snakemake_python2_env && module load bioinfo-tools MUMmer/3.23 # CONCOCT dev f4cb9fcb",
         "mapper": "bowtie2",
         "mapping_params": "default",
         "concoct_params": {
             "cutoff-1000-maxcluster-1000": "-c 1000 -l 1000"
         },
-        "scripts_dir": "~/repos/CONCOCT/scripts"
+        "scripts_dir": "CONCOCT/scripts"
     },
     "prodigal_rules": {
         "load_env": "module load bioinfo-tools prodigal/2.6.3 && source activate basic_sandbox",

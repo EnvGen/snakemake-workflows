@@ -182,6 +182,15 @@ for assembly_file in glob.glob("assembly/megahit/*/*/final.contigs.fa*"):
     #  add 10K cutup as references for bowtie2 to map against
     config["bowtie2_rules"]["references"][a + "_10K"] = "concoct/{a}/cutup/contigs_10K.fasta.gz".format(a=a)
 
+# add all coassemblys as well:
+for assembly_file in glob.glob("assembly/megahit_coassembly/*/final.contigs.fa"):
+    assembly_type = assembly_file.split('/')[2]
+    a = assembly_type + '_coassembly'
+    config['concoct_rules']['assemblies'][a] = assembly_file
+
+    #  add 10K cutup as references for bowtie2 to map against
+    config["bowtie2_rules"]["references"][a + "_10K"] = "concoct/{a}/cutup/contigs_10K.fasta.gz".format(a=a)
+
 # Add reads that will go through internal standards protocol before added to the pipeline
 for read_file in glob.glob("only_for_mapping/with_internal_standards/*/*.fq.gz"):
     read_basename = os.path.basename(read_file)
@@ -224,6 +233,7 @@ include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/quantification/bowtie2.rules"
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/taxonomic_annotation/megan.rules")
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/quality_control/internal_standards.rules")
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/quantification/kallisto.rules")
+include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/binning/concoct.rules")
 
 # The index is large, need to use .bt2l indices
 ruleorder: bowtie2_map_large > bowtie2_map

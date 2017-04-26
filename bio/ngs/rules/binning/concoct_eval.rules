@@ -27,7 +27,7 @@ rule concoct_extract_all_bins_nocutup:
         """
             {config[concoct_rules][load_env]}
             mkdir -p {params.output_path}
-            python {params.extract_bins} <(zcat {input.asm}) {input.clustering} --output_path {params.output_path}
+            python {params.extract_bins} {input.asm} {input.clustering} --output_path {params.output_path}
         """
 
 

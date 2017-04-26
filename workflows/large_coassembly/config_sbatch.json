@@ -1,4 +1,5 @@
 {
+
     "sbatch_general": {
         "account": "b2010008",
         "wrapper_script": "/proj/b2010008/bin/sbatch_job"
@@ -432,5 +433,47 @@
     "schedule_dbcan_standardize_collate_annotations": "schedule_short",
     "schedule_eggnog_standardize_collate_annotations": "schedule_short",
     "schedule_pfam_standardize_collate_annotations": "schedule_short",
-    "schedule_prodigal_gff_to_bed": "schedule_one_core_medium"
+    "schedule_prodigal_gff_to_bed": "schedule_one_core_medium",
+    "schedule_kallisto_index": {
+        "days": 0,
+        "hours": 6,
+        "minutes": 0,
+        "partition": "node",
+        "cores": "16",
+        "extra_parameters": ""
+    },
+    "schedule_kallisto_quant_sample": {
+        "days": 0,
+        "hours": 2,
+        "minutes": 0,
+        "partition": "node",
+        "cores": "16",
+        "extra_parameters": ""
+    },
+    "schedule_concoct_cutup_10K": {
+        "days": 0,
+        "hours": 3,
+        "minutes": 0,
+        "partition": "core",
+        "cores": "1",
+        "extra_parameters": ""
+    },
+    "schedule_concoct_run_10K": {
+        "days": 2,
+        "hours": 0,
+        "minutes": 0,
+        "partition": "core",
+        "cores": "10",
+        "extra_parameters": "--mail-type=END --mail-user=johannes.alneberg@scilifelab.se"
+    },
+    "schedule_kallisto_concoct_inputtable": {
+        "days": 0,
+        "hours": 6,
+        "minutes": 0,
+        "partition": "core",
+        "cores": "1",
+        "extra_parameters": ""
+    },
+    "schedule_concoct_merge_cutup_contigs": "schedule_short",
+    "schedule_concoct_extract_all_bins_nocutup": "schedule_short"
 }
