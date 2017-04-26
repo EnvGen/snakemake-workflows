@@ -27,7 +27,10 @@
         "scripts_dir": "CONCOCT/scripts",
         "approve_bins_script": "toolbox/scripts/concoct/approve_bins_from_checkm.py",
         "min_completeness": "85",
-        "max_contamination": "5"
+        "max_contamination": "5",
+        "dnadiff_tmp_dir": "$SNIC_TMP",
+        "merge_clustering_script": "toolbox/scripts/concoct/merge_cutup_clustering.py",
+        "extract_bins_script": "toolbox/scripts/concoct/extract_fasta_bins.py"
     },
     "prodigal_rules": {
         "load_env": "module load bioinfo-tools prodigal/2.6.3 && source activate basic_sandbox",
