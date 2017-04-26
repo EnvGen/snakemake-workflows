@@ -113,7 +113,7 @@ config["prodigal_rules"]["merging_sample_sets"] = config["prokka_extended_rules"
 config["bowtie2_quant_rules"]["split_ref_sets"] = config["prokka_extended_rules"]["merging_sample_sets"]
 
 megahit_coassembly_genes = "annotation/prokka_extended/all_annotated_sequences/megahit_coassembly/PROKKA.ffn"
-megahit_coassembly_contigs = "assembly/megahit_coassembly/default/final.contigs.fa"
+megahit_coassembly_contigs = "assembly/megahit_coassembly/{}/final.contigs.fa"
 
 config["bowtie2_quant_rules"]["split_ref_sets"] = config["prokka_extended_rules"]["merging_sample_sets"]
 
@@ -164,7 +164,8 @@ for read_file in glob.glob("only_for_mapping/finished_reads/dna/*.fq.gz"):
         config["bowtie2_quant_rules"]["samples"][sample_name] = [sample_name]
 
 config["bowtie2_quant_rules"]["references"] = {"megahit_coassembly_genes": megahit_coassembly_genes}
-config["bowtie2_quant_rules"]["references"]["megahit_coassembly_contigs"] = megahit_coassembly_contigs
+config["bowtie2_quant_rules"]["references"]["megahit_coassembly_contigs"] = megahit_coassembly_contigs.format("default")
+config["bowtie2_quant_rules"]["references"]["meta-sensitive_megahit_coassembly_contigs"] = megahit_coassembly_contigs.format("meta-sensitive")
 config["bowtie2_quant_rules"]["reference_for_ref_set"]["megahit_coassembly"] = "megahit_coassembly_contigs"
 
 config["bowtie2_rules"]["references"] = config["bowtie2_quant_rules"]["references"]
