@@ -33,7 +33,33 @@ rule concoct_extract_all_bins_nocutup:
 
 rule concoct_checkm:
     input:
-        "concoct/{assembly}/output_{quant}/{concoct_params}/all_bins_nocutup/{cluster_name}.fa"
+        concoct_extract_all_bins_nocutup.output
+    output:
+        "concoct/{assembly}/output_{quant}/{concoct_params}/checkm_output/stats.tsv"
+    params:
+        input_dir = "concoct/{assembly}/output_{quant}/{concoct_params}/all_bins_nocutup"
+        output_dir = "concoct/{assembly}/output_{quant}/{concoct_params}/checkm_output/"
+    shell:
+        """ set +u; {config[concoct_rules][load_env]}; set -u
+            mkdir -p {params.output_dir}
+            checkm lineage_wf -t 8 -x fa --tab_table -f {output} {params.input_dir} {params.output_dir} """
+
+rule concoct_extract_approved_scg_bins:
+    input:
+        all_bins = concoct_extract_all_bins_nocutup.output,
+        checkm_stats = concoct_checkm.output
+    output:
+        dynamic("concoct/{assembly}/output_{quant}/{concoct_params}/all_approved_bins_nocutup/{cluster_name}.fa"
+    params:
+        approve_bins_script = config["concoct_rules"]["approve_bins_script"],
+        input_dir = "concoct/{assembly}/output_{quant}/{concoct_params}/all_bins_nocutup",
+        output_dir = "concoct/{assembly}/output_{quant}/{concoct_params}/all_approved_bins_nocutup",
+        min_comp = config["concoct_rules"]["min_completeness"],
+        max_cont = config["concoct_rules"]["max_contaminatoin"]
+    shell:
+        """ set +u {config[concoct_rules][load_env]}; set -u
+            python {params.approve_bins_script} {params.input_dir} {input.checkm_stats} {params.output_dir} --min_completeness {params.min_comp} --max_contamination {params.max_cont}
+        """
 
 rule concoct_extract_approved_scg_bins_all:
     input:
