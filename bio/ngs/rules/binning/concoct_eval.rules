@@ -55,7 +55,7 @@ rule concoct_extract_approved_scg_bins:
         input_dir = "concoct/{assembly}/output_{quant}/{concoct_params}/all_bins_nocutup",
         output_dir = "concoct/{assembly}/output_{quant}/{concoct_params}/all_approved_bins_nocutup",
         min_comp = config["concoct_rules"]["min_completeness"],
-        max_cont = config["concoct_rules"]["max_contaminatoin"]
+        max_cont = config["concoct_rules"]["max_contamination"]
     shell:
         """ set +u {config[concoct_rules][load_env]}; set -u
             python {params.approve_bins_script} {params.input_dir} {input.checkm_stats} {params.output_dir} --min_completeness {params.min_comp} --max_contamination {params.max_cont}
