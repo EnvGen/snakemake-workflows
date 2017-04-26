@@ -32,7 +32,7 @@
     },
     "hmmer_rules": {},
     "prodigal_rules": {
-        "load_env": "module load bioinfo-tools prodigal/2.6.3 && source activate basic_sandbox",
+        "load_env": "module load bioinfo-tools prodigal/2.6.3 && source activate snakemake_python2_env",
         "length_script": "BLUEPRINT_pipeline/toolbox/scripts/fasta_lengths.py",
         "dbs": ["pfam", "dbCAN", "EggNOG"],
         "prodigal_params": {
