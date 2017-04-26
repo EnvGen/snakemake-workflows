@@ -37,7 +37,7 @@ rule concoct_checkm:
     output:
         "concoct/{assembly}/output_{quant}/{concoct_params}/checkm_output/stats.tsv"
     params:
-        input_dir = "concoct/{assembly}/output_{quant}/{concoct_params}/all_bins_nocutup"
+        input_dir = "concoct/{assembly}/output_{quant}/{concoct_params}/all_bins_nocutup",
         output_dir = "concoct/{assembly}/output_{quant}/{concoct_params}/checkm_output/"
     shell:
         """ set +u; {config[concoct_rules][load_env]}; set -u
