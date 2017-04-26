@@ -193,8 +193,8 @@
     "schedule_megahit_assemble_sample_all": "schedule_short",
     "schedule_megahit_coassemble_split": "schedule_one_core_medium",
     "schedule_prokka_extended_run": {
-        "days": 1,
-        "hours": 0,
+        "days": 0,
+        "hours": 3,
         "minutes": 0,
         "partition": "node",
         "cores": "16",
