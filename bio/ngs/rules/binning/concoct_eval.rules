@@ -46,7 +46,7 @@ rule concoct_checkm:
 
 rule concoct_extract_approved_scg_bins:
     input:
-        all_bins = concoct_extract_all_bins_nocutup.output,
+        dynamic("concoct/{assembly}/output_{quant}/{concoct_params}/all_bins_nocutup/{cluster_name}.fa"),
         checkm_stats = concoct_checkm.output
     output:
         dynamic("concoct/{assembly}/output_{quant}/{concoct_params}/all_approved_bins_nocutup/{cluster_name}.fa")
