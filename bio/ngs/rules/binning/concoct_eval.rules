@@ -49,7 +49,7 @@ rule concoct_extract_approved_scg_bins:
         all_bins = concoct_extract_all_bins_nocutup.output,
         checkm_stats = concoct_checkm.output
     output:
-        dynamic("concoct/{assembly}/output_{quant}/{concoct_params}/all_approved_bins_nocutup/{cluster_name}.fa"
+        dynamic("concoct/{assembly}/output_{quant}/{concoct_params}/all_approved_bins_nocutup/{cluster_name}.fa")
     params:
         approve_bins_script = config["concoct_rules"]["approve_bins_script"],
         input_dir = "concoct/{assembly}/output_{quant}/{concoct_params}/all_bins_nocutup",
