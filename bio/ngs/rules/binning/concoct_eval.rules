@@ -33,7 +33,7 @@ rule concoct_extract_all_bins_nocutup:
 
 rule concoct_checkm:
     input:
-        concoct_extract_all_bins_nocutup.output
+        dynamic("concoct/{assembly}/output_{quant}/{concoct_params}/all_bins_nocutup/{cluster_name}.fa")
     output:
         "concoct/{assembly}/output_{quant}/{concoct_params}/checkm_output/stats.tsv"
     params:
