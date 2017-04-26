@@ -148,7 +148,7 @@ include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/duplicate_removal/fastuniq.ru
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/assembly/megahit.rules")
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/binning/concoct.rules")
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/binning/concoct_eval.rules")
-include: os.path.join(WORKFLOE_DIR, "bio/ngs/rules/annotation/prodigal.rules")
+include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/annotation/prodigal.rules")
 
 rule preprocess_all:
     input:
