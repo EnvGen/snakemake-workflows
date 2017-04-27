@@ -24,7 +24,7 @@ rule concoct_extract_all_bins_nocutup:
         output_path = "concoct/{assembly}/output_{quant}/{concoct_params}/all_bins_nocutup"
     shell:
         """
-            {config[concoct_rules][load_env]}
+            set +u; {config[concoct_rules][load_env]}; set -u
             mkdir -p {params.output_path}
             python {params.extract_bins} {input.asm} {input.clustering} --output_path {params.output_path}
         """
@@ -82,7 +82,7 @@ rule concoct_dnadiff_dist_matrix:
     run:
         sorted_input = sorted(input.clusters)
         shell("""
-        {config[concoct_rules][load_env]}
+        set +u; {config[concoct_rules][load_env]}; set -u
         mkdir -p {params.tmp_dir}
         python {config[concoct_rules][scripts_dir]}/dnadiff_dist_matrix.py \
             {params.tmp_dir} {sorted_input}
@@ -126,7 +126,7 @@ rule concoct_eval_cog_plot_merged:
         "concoct/{assembly}/evaluation/scg/{concoct_params}/clustering_scg_merged.pdf"
     shell:
         """
-        {config[concoct_rules][load_env]}
+        set +u; {config[concoct_rules][load_env]}; set -u
         Rscript {config[concoct_rules][scripts_dir]}/COGPlot.R \
             -s {input} \
             -o {output}
@@ -143,7 +143,7 @@ rule concoct_eval_cog_plot:
         "concoct/{assembly}/evaluation/scg/{concoct_params}/clustering_scg.pdf"
     shell:
         """
-        {config[concoct_rules][load_env]}
+        set +u; {config[concoct_rules][load_env]}; set -u
         Rscript {config[concoct_rules][scripts_dir]}/COGPlot.R \
             -s {input} \
             -o {output}
@@ -221,7 +221,7 @@ rule concoct_eval_cog_table_merged:
         "concoct/{assembly}/evaluation/scg/{concoct_params}/clustering_scg_merged.tsv"
     shell:
         """
-        {config[concoct_rules][load_env]}
+        set +u {config[concoct_rules][load_env]}; set -u
         python {config[concoct_rules][scripts_dir]}/COG_table.py \
             -b {input.rpsblast} \
             -m {config[concoct_rules][scripts_dir]}/../scgs/scg_cogs_min0.97_max1.03_unique_genera.txt \
