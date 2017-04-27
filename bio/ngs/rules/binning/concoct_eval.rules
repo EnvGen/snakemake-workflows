@@ -8,8 +8,7 @@ rule concoct_merge_cutup_contigs:
     params:
         merge_script = config["concoct_rules"]["merge_clustering_script"]
     shell:
-        """
-            {config[concoct_rules][load_env]}
+        """ set +u; {config[concoct_rules][load_env]}; set -u
             python {params.merge_script} {input} > {output}
          """
 

@@ -13,7 +13,7 @@ for cr in CONFIG_REQS:
 
 
 #  add 10K cutup as references for bowtie2 to map against
-config["bowtie2_rules"].setdefault("references", {}).update({a + "_10K": "concoct/{a}/cutup/contigs_10K.fasta".format(a=a) for a in config["concoct_rules"]["assemblies"]})
+#config["bowtie2_rules"].setdefault("references", {}).update({a + "_10K": "concoct/{a}/cutup/contigs_10K.fasta".format(a=a) for a in config["concoct_rules"]["assemblies"]})
 
 rule concoct_cutup_10K:
     input:
