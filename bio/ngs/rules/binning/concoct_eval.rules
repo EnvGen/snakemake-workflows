@@ -32,7 +32,7 @@ rule concoct_extract_all_bins_nocutup:
 
 rule concoct_checkm:
     input:
-        lambda wildcards: dynamic("concoct/{0}/output_{1}/{2}/all_bins_nocutup/{cluster_name}.fa".format(wildcards.assembly, wildcards.quant, wildcards.concoct_params))
+        lambda wildcards: dynamic("concoct/{0}/output_{1}/{2}/all_bins_nocutup/{{cluster_name}}.fa".format(wildcards.assembly, wildcards.quant, wildcards.concoct_params))
     output:
         "concoct/{assembly}/output_{quant}/{concoct_params}/checkm_output/stats.tsv"
     params:
