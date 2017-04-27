@@ -32,7 +32,7 @@ rule concoct_extract_all_bins_nocutup:
 
 rule concoct_checkm:
     input:
-        dynamic("concoct/{assembly}/output_{quant}/{concoct_params}/all_bins_nocutup/{cluster_name}.fa")
+        lambda wildcards: dynamic("concoct/{0}/output_{1}/{2}/all_bins_nocutup/{cluster_name}.fa".format(wildcards.assembly, wildcards.quant, wildcards.concoct_params)
     output:
         "concoct/{assembly}/output_{quant}/{concoct_params}/checkm_output/stats.tsv"
     params:
@@ -45,7 +45,7 @@ rule concoct_checkm:
 
 rule concoct_extract_approved_scg_bins:
     input:
-        dynamic("concoct/{assembly}/output_{quant}/{concoct_params}/all_bins_nocutup/{cluster_name}.fa"),
+        lambda wildcards: dynamic("concoct/{0}/output_{1}/{2}/all_bins_nocutup/{cluster_name}.fa".format(wildcards.assembly, wildcards.quant, wildcards.concoct_params),
         checkm_stats = "concoct/{assembly}/output_{quant}/{concoct_params}/checkm_output/stats.tsv"
     output:
         dynamic("concoct/{assembly}/output_{quant}/{concoct_params}/all_approved_bins_nocutup/{cluster_name}.fa")
