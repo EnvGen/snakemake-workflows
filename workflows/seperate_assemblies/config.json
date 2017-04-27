@@ -25,10 +25,13 @@
         "concoct_params": {
             "cutoff-1000-maxcluster-1000": "-c 1000 -l 1000"
         },
+        "scripts_dir": "CONCOCT/scripts",
+        "approve_bins_script": "toolbox/scripts/concoct/approve_bins_from_checkm.py",
+        "min_completeness": "75",
+        "max_contamination": "5",
         "dnadiff_tmp_dir": "$SNIC_TMP",
         "merge_clustering_script": "toolbox/scripts/concoct/merge_cutup_clustering.py",
-        "extract_bins_script": "toolbox/scripts/concoct/extract_fasta_bins.py",
-        "scripts_dir": "CONCOCT/scripts"
+        "extract_bins_script": "toolbox/scripts/concoct/extract_fasta_bins.py"
     },
     "hmmer_rules": {},
     "prodigal_rules": {
