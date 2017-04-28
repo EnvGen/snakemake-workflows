@@ -71,7 +71,7 @@ for cluster_file in glob.glob("concoct/approved_scg_bins/*.fa"):
 rule concoct_dnadiff_dist_matrix:
     """Get distance matrix from approved SCG bins"""
     input:
-        lambda wildcards: config["concoct_rules"]["approved_bins"]
+        clusters = lambda wildcards: config["concoct_rules"]["approved_bins"]
     output:
         "concoct/dnadiff_dist_matrix/dist_matrix.tsv",
         "concoct/dnadiff_dist_matrix/hclust_heatmap.pdf",
