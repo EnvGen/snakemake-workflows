@@ -64,15 +64,14 @@ rule concoct_extract_approved_scg_bins_all:
     input:
         dynamic("concoct/approved_scg_bins/{cluster_name}.fa")
 
-
-rule concoct_extract_approved_scg_bins_all_nocutup:
-    input:
-        dynamic("concoct/approved_scg_bins_nocutup/{cluster_name}.fa")
+config["concoct_rules"]["approved_bins"] = []
+for cluster_file in glob.glob("concoct/approved_scg_bins/*.fa"):
+    config["concoct_rules"]["approved_bins"].append(cluster_file)
 
 rule concoct_dnadiff_dist_matrix:
     """Get distance matrix from approved SCG bins"""
     input:
-        clusters=dynamic("concoct/approved_scg_bins/{cluster_name}.fa")
+        lambda wildcards: config["concoct_rules"]["approved_bins"]
     output:
         "concoct/dnadiff_dist_matrix/dist_matrix.tsv",
         "concoct/dnadiff_dist_matrix/hclust_heatmap.pdf",
