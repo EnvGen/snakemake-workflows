@@ -187,4 +187,12 @@
         "cores": "8",
         "extra_parameters": ""
     }
+    "schedule_concoct_dnadiff_dist_matrix": {
+        "days": 0,
+        "hours": 3,
+        "minutes": 0,
+        "partition": "core",
+        "cores": "1",
+        "extra_parameters": ""
+    }
 }
