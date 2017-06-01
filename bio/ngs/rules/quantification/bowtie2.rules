@@ -47,7 +47,7 @@ rule bowtie2_tpm_gene_table:
             sample = config["bowtie2_quant_rules"]["sample_groups"][wildcards.sample_group]
         ),
         sample_info = "quantification/bowtie2_genes/sample_info.tsv",
-        gene_lengths = lambda wildcards: "annotation/{gene_prediction}/all_annotated_sequences/{split_ref_set}/gene_lengths.tsv".format(gene_prediction = config["bowtie2_quant_rules"]["gene_prediction"], split_ref_set = wildcards.split_ref_set) 
+        gff2 = lambda wildcards: "annotation/{gene_prediction}/all_annotated_sequences/{split_ref_set}/proteins.gff2".format(gene_prediction=config["bowtie2_quant_rules"]["gene_prediction"], split_ref_set=wildcards.split_ref_set)
     output:
         "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/{sample_group}/tpm_table.tsv.gz"
     run:
@@ -57,7 +57,7 @@ rule bowtie2_tpm_gene_table:
                 --sample_names {sample_names} \
                 --coverage_files {input.counts} \
                 --sample_info {input.sample_info} \
-                --gene_lengths {input.gene_lengths} \
+                --gff {input.gff2} \
                 --input_compression 'gzip'  | gzip > {output}
         """)
 
@@ -69,7 +69,7 @@ rule bowtie2_raw_counts_gene_table:
             split_ref_set = wildcards.split_ref_set,
             sample = config["bowtie2_quant_rules"]["sample_groups"][wildcards.sample_group]
         ),
-        gene_lengths = lambda wildcards: "annotation/{gene_prediction}/all_annotated_sequences/{split_ref_set}/gene_lengths.tsv".format(gene_prediction = config["bowtie2_quant_rules"]["gene_prediction"], split_ref_set = wildcards.split_ref_set) 
+        gff2 = lambda wildcards: "annotation/{gene_prediction}/all_annotated_sequences/{split_ref_set}/proteins.gff2".format(gene_prediction=config["bowtie2_quant_rules"]["gene_prediction"], split_ref_set=wildcards.split_ref_set)
     output:
         "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/{sample_group}/raw_counts_table.tsv.gz"
     run:
@@ -78,7 +78,7 @@ rule bowtie2_raw_counts_gene_table:
             python {config[bowtie2_quant_rules][raw_counts_table_script]} \
                 --sample_names {sample_names} \
                 --coverage_files {input.counts} \
-                --gene_lengths {input.gene_lengths} \
+                --gff {input.gff2} \
                 --input_compression 'gzip' | gzip > {output}
         """)
 
