@@ -49,7 +49,7 @@ rule fastqc:
        tmp_output_html ="fastqc/{0}/{1}_fastqc.html".format(wildcards.reads, read_file_cut_one_ext)
        shell("""
         {config[fastqc_rules][load_env]}
-        fastqc {input} -o `dirname {output.html}`
+        fastqc -t 4 {input} -o `dirname {output.html}`
         mv {tmp_output_html} {output.html}
         mv {tmp_output_zip} {output.zip}
         """)
