@@ -11,9 +11,9 @@ for cr in CONFIG_REQS:
 
 def histogram_bam_input(mapping_params, sample, reference):
     if sample in config["bowtie2_quant_rules"]["rna_samples"]:
-        bam_ending = ".bam"
+        bam_ending = ".namesorted.bam"
     else:
-        bam_ending = ".removeduplicates.bam"
+        bam_ending = ".removeduplicates.namesorted.bam"
 
     bam_unformatted_s = "mapping/bowtie2/{mapping_params}/{reference}/samples/{sample}.sorted{bam_ending}"
     return bam_unformatted_s.format(
