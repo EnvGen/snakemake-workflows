@@ -8,19 +8,19 @@ import shutil
 import glob
 from subprocess import check_output
 
-# Check that no submodule git repo is dirty
-submodules = ["BLUEPRINT_pipeline"]
-for submodule in submodules:
-    submodule_status = check_output(["git", "status", "--porcelain", submodule])
-    if not submodule_status == b"":
-        print(submodule_status)
-        raise Exception("Submodule {} is dirty. Commit changes before proceeding.".format(submodule))
-
-# Check that the git repo is not dirty
-submodule_status = check_output(["git", "status", "--porcelain"])
-if not submodule_status == b"":
-    print(submodule_status)
-    raise Exception("Repo is dirty. Commit changes before proceeding.")
+## Check that no submodule git repo is dirty
+#submodules = ["BLUEPRINT_pipeline"]
+#for submodule in submodules:
+#    submodule_status = check_output(["git", "status", "--porcelain", submodule])
+#    if not submodule_status == b"":
+#        print(submodule_status)
+#        raise Exception("Submodule {} is dirty. Commit changes before proceeding.".format(submodule))
+#
+## Check that the git repo is not dirty
+#submodule_status = check_output(["git", "status", "--porcelain"])
+#if not submodule_status == b"":
+#    print(submodule_status)
+#    raise Exception("Repo is dirty. Commit changes before proceeding.")
 
 # Chose config file based on if we're on uppmax or not
 configfile: "config.json"
@@ -28,15 +28,6 @@ configfile: "config.json"
 config["fastqc_rules"]["reads"] = {}
 config["cutadapt_rules"]["reads"] = {}
 config["megahit_rules"]["samples"] = {}
-
-with open("sample_indices.json") as si:
-    sample_indices = json.load(si)
-
-with open("analysis_per_sample.json") as aps:
-    analysis_per_sample = json.load(aps)
-
-with open("sample_groups.json") as sg:
-    sample_groups = json.load(sg)
 
 for read_file in glob.glob("samples/raw/*.fq.gz"):
     read_basename = os.path.basename(read_file)
@@ -95,7 +86,13 @@ for read_file in glob.glob("finished_reads/*.fq.gz"):
     else:
         config["megahit_rules"]["samples"][sample_name] = [read_file]
 
-for contigs_f in glob.glob("assembly/megahit_coassembly/default/parts/contigs.*.fasta"):
+if os.path.isfile("sample_groups.json"):
+    with open("sample_groups.json") as sg:
+        sample_groups = json.load(sg)
+else:
+    sample_groups = {"all_samples": config["megahit_rules"]["samples"].keys()}
+
+for contigs_f in glob.glob("assembly/megahit_coassembly/meta-sensitive/parts/contigs.*.fasta"):
     part = contigs_f.split('.')[-2]
     config["prokka_extended_rules"]["contigs"]['megahit_coassembly.{}'.format(part)] = contigs_f
     config["prokka_extended_rules"]["locustags"]['megahit_coassembly.{}'.format(part)] = "PROKKA_MOD_PART{}".format(part)
@@ -109,13 +106,14 @@ for contigs_name, contigs_f in config["prokka_extended_rules"]["contigs"].items(
     if contigs_name.startswith("megahit_coassembly"):
         config["prokka_extended_rules"]["merging_sample_sets"]["megahit_coassembly"].append(contigs_name)
 
+
 config["prokka_extended_rules"]["merging_sample_sets"]["megahit_coassembly"].sort(key= lambda x: int(x.split('.')[-1]))
 
 config["prodigal_rules"]["merging_sample_sets"] = config["prokka_extended_rules"]["merging_sample_sets"]
 config["bowtie2_quant_rules"]["split_ref_sets"] = config["prokka_extended_rules"]["merging_sample_sets"]
 
 megahit_coassembly_genes = "annotation/prokka_extended/all_annotated_sequences/megahit_coassembly/PROKKA.ffn"
-megahit_coassembly_contigs = "assembly/megahit_coassembly/default/final.contigs.fa"
+megahit_coassembly_contigs = "assembly/megahit_coassembly/{}/final.contigs.fa"
 
 config["bowtie2_quant_rules"]["split_ref_sets"] = config["prokka_extended_rules"]["merging_sample_sets"]
 
@@ -166,13 +164,33 @@ for read_file in glob.glob("only_for_mapping/finished_reads/dna/*.fq.gz"):
         config["bowtie2_quant_rules"]["samples"][sample_name] = [sample_name]
 
 config["bowtie2_quant_rules"]["references"] = {"megahit_coassembly_genes": megahit_coassembly_genes}
-config["bowtie2_quant_rules"]["references"]["megahit_coassembly_contigs"] = megahit_coassembly_contigs
+config["bowtie2_quant_rules"]["references"]["megahit_coassembly_contigs"] = megahit_coassembly_contigs.format("default")
+config["bowtie2_quant_rules"]["references"]["meta-sensitive_megahit_coassembly_contigs"] = megahit_coassembly_contigs.format("meta-sensitive")
 config["bowtie2_quant_rules"]["reference_for_ref_set"]["megahit_coassembly"] = "megahit_coassembly_contigs"
 
 config["bowtie2_rules"]["references"] = config["bowtie2_quant_rules"]["references"]
 config["bowtie2_rules"]["units"] = config["bowtie2_quant_rules"]["units"]
 config["bowtie2_rules"]["samples"] = config["bowtie2_quant_rules"]["samples"]
 config["bowtie2_rules"]["mapping_params"] = config["bowtie2_quant_rules"]["mapping_params"]
+
+config['concoct_rules']['assemblies'] = {}
+for assembly_file in glob.glob("assembly/megahit/*/*/final.contigs.fa*"):
+    assembly_type = assembly_file.split('/')[2]
+    sample_name = assembly_file.split('/')[3]
+    a = assembly_type + '_' + sample_name
+    config['concoct_rules']['assemblies'][a] = assembly_file
+
+    #  add 10K cutup as references for bowtie2 to map against
+    config["bowtie2_rules"]["references"][a + "_10K"] = "concoct/{a}/cutup/contigs_10K.fasta.gz".format(a=a)
+
+# add all coassemblys as well:
+for assembly_file in glob.glob("assembly/megahit_coassembly/*/final.contigs.fa"):
+    assembly_type = assembly_file.split('/')[2]
+    a = assembly_type + '_coassembly'
+    config['concoct_rules']['assemblies'][a] = assembly_file
+
+    #  add 10K cutup as references for bowtie2 to map against
+    config["bowtie2_rules"]["references"][a + "_10K"] = "concoct/{a}/cutup/contigs_10K.fasta.gz".format(a=a)
 
 # Add reads that will go through internal standards protocol before added to the pipeline
 for read_file in glob.glob("only_for_mapping/with_internal_standards/*/*.fq.gz"):
@@ -191,23 +209,13 @@ for read_file in glob.glob("only_for_mapping/with_internal_standards/*/*.fq.gz")
         config["bowtie2_rules"]["units"][sample_name] = [read_file]
         config["bowtie2_rules"]["samples"][sample_name] = [sample_name]
 
-# Load information on which internal standard have been used
-with open("internal_standards.json") as i_s:
-    internal_standards = json.load(i_s)
-
-config["internal_standards"]["sample_to_reference"] = {}
-
-for sample, reference in internal_standards.items():
-    ref_name = reference.split('/')[-2]
-    if ref_name not in config["bowtie2_rules"]["references"]:
-        config["bowtie2_rules"]["references"][ref_name] = reference
-
-    config["internal_standards"]["sample_to_reference"][sample] = ref_name
+config["kallisto_rules"]["references"] = config["bowtie2_rules"]["references"]
+config["kallisto_rules"]["samples"] = config["bowtie2_rules"]["units"]
 
 config["taxonomic_annotation"]["sample_sets"] = config['bowtie2_quant_rules']["split_ref_sets"]
 
 
-WORKFLOW_DIR = "../../snakemake-workflows/"
+WORKFLOW_DIR = "../../"
 
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/mapping/bowtie2.rules")
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/annotation/prodigal.rules")
@@ -225,7 +233,9 @@ include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/annotation/prokka.rules")
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/quantification/bowtie2.rules")
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/taxonomic_annotation/megan.rules")
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/quality_control/internal_standards.rules")
-
+include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/quantification/kallisto.rules")
+include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/binning/concoct.rules")
+include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/binning/concoct_eval.rules")
 
 # The index is large, need to use .bt2l indices
 ruleorder: bowtie2_map_large > bowtie2_map

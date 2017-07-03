@@ -13,7 +13,7 @@ for cr in CONFIG_REQS:
 
 
 #  add 10K cutup as references for bowtie2 to map against
-config["bowtie2_rules"].setdefault("references", {}).update({a + "_10K": "concoct/{a}/cutup/contigs_10K.fasta".format(a=a) for a in config["concoct_rules"]["assemblies"]})
+#config["bowtie2_rules"].setdefault("references", {}).update({a + "_10K": "concoct/{a}/cutup/contigs_10K.fasta".format(a=a) for a in config["concoct_rules"]["assemblies"]})
 
 rule concoct_cutup_10K:
     input:
@@ -26,24 +26,27 @@ rule concoct_cutup_10K:
     threads: 1
     shell:
         """
-        {config[concoct_rules][load_env]}
+        set +u; {config[concoct_rules][load_env]}; set-u;
         python {config[concoct_rules][scripts_dir]}/cut_up_fasta.py -c {params.chunk_size} -o {params.overlap} \
             -m {input} > {output}
         """
 
-rule concoct_cutup_10K_all:
+
+rule concoct_cutup_10K_zip:
     input:
-            expand("concoct/{assembly}/cutup/contigs_10K.fasta", assembly=config["concoct_rules"]["assemblies"])
-
-
-rule concoct_map_10K_all:
-    input:
-        expand("mapping/{mapper}/{mapping_params}/{assembly}/samples/{sample}.sorted.removeduplicates.bam",
-               assembly=config["bowtie2_rules"]["references"],
-               sample=config["bowtie2_rules"]["samples"],
-               mapping_params=config["concoct_rules"]["mapping_params"],
-               mapper=config["concoct_rules"]["mapper"])
-
+        lambda wildcards: config["concoct_rules"]["assemblies"][wildcards.assembly]
+    output:
+        "concoct/{assembly}/cutup/contigs_10K.fasta.gz"
+    params:
+        chunk_size="10000",
+        overlap="0"
+    threads: 1
+    shell:
+        """
+        set +u; {config[concoct_rules][load_env]}; set -u;
+        python {config[concoct_rules][scripts_dir]}/cut_up_fasta.py -c {params.chunk_size} -o {params.overlap} \
+            -m <(zcat {input}) | gzip -c > {output}
+        """
 
 rule concoct_generate_coverage_table_10K:
     input:
@@ -53,13 +56,13 @@ rule concoct_generate_coverage_table_10K:
                    mapper=config["concoct_rules"]["mapper"],
                    mapping_params=config["concoct_rules"]["mapping_params"])
     output:
-        "concoct/{assembly}/input/concoct_inputtable.tsv",
-        "concoct/{assembly}/input/concoct_inputtableR.tsv"
+        "concoct/{assembly}/input_default/concoct_inputtable.tsv",
+        "concoct/{assembly}/input_default/concoct_inputtableR.tsv"
     params:
         sample_names=sorted(config["bowtie2_rules"]["samples"])
     shell:
         """
-        {config[concoct_rules][load_env]}
+        set +u; {config[concoct_rules][load_env]}; set -u;
         python {config[concoct_rules][scripts_dir]}/gen_input_table.py --isbedfiles \
             --samplenames <(for s in {params.sample_names}; do echo $s; done) \
                 {input.asm} {input.bedcovs} \
@@ -78,19 +81,19 @@ rule concoct_run_10K:
     Run CONCOCT
     """
     input:
-        asm="concoct/{assembly}/cutup/contigs_10K.fasta",
-        input_table="concoct/{assembly}/input/concoct_inputtableR.tsv"
+        asm="concoct/{assembly}/cutup/contigs_10K.fasta.gz",
+        input_table="concoct/{assembly}/input_{quant}/concoct_inputtableR.tsv"
     output:
-        clustering="concoct/{assembly}/output/{cparams}/clustering.csv"
+        clustering="concoct/{assembly}/output_{quant}/{cparams}/clustering.csv"
     params:
-        output_folder="concoct/{assembly}/output/{cparams}/",
+        output_folder="concoct/{assembly}/output_{quant}/{cparams}/",
         concoct_params=lambda wildcards: config["concoct_rules"]["concoct_params"][wildcards.cparams]
     shell:
         """
-        {config[concoct_rules][load_env]}
+        set +u; {config[concoct_rules][load_env]}; set -u;
         concoct {params.concoct_params} \
             --coverage_file {input.input_table} \
-            --composition_file {input.asm} \
+            --composition_file <(zcat {input.asm}) \
             -b {params.output_folder} && \
         ln -fs $(basename {params.output_folder}clustering_gt*.csv) \
                {output.clustering} && \
@@ -98,21 +101,11 @@ rule concoct_run_10K:
         """
 
 
-rule concoct_run_10K_all:
-    """
-    Run CONCOCT on all assemblies over all parameters specified in the config file.
-    """
-    input:
-        expand("concoct/{assembly}/output/{concoct_params}/clustering.csv",
-            assembly=config["concoct_rules"]["assemblies"],
-            concoct_params=config["concoct_rules"]["concoct_params"])
-
-
 rule merge_concoct_results:
     input:
-        "concoct/{assembly}/output/{concoct_params}/clustering.csv"
+        "concoct/{assembly}/output_{quant}/{concoct_params}/clustering.csv"
     output:
-        "concoct/{assembly}/output/{concoct_params}/clustering_merged.csv"
+        "concoct/{assembly}/output_{quant}/{concoct_params}/clustering_merged.csv"
     shell:
         """
             {config[concoct_rules][load_env]}

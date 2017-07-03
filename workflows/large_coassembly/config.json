@@ -13,14 +13,24 @@
         "threads_for_sorting": "16"
     },
     "mapping_report_rules": {},
+    "kallisto_rules": {
+        "load_env": "module load bioinfo-tools kallisto/0.43.0",
+        "inputtable_script":  "toolbox/scripts/kallisto_concoct/input_table.py"
+    },
     "concoct_rules": {
-        "load_env": "source activate  && module load bioinfo-tools MUMmer/3.23 # CONCOCT dev f4cb9fcb",
+        "load_env": "source activate snakemake_python2_env && module load bioinfo-tools prodigal/2.6.3 hmmer/3.1b2 MUMmer/3.23 # CONCOCT dev f4cb9fcb",
         "mapper": "bowtie2",
         "mapping_params": "default",
         "concoct_params": {
             "cutoff-1000-maxcluster-1000": "-c 1000 -l 1000"
         },
-        "scripts_dir": "~/repos/CONCOCT/scripts"
+        "scripts_dir": "CONCOCT/scripts",
+        "approve_bins_script": "toolbox/scripts/concoct/approve_bins_from_checkm.py",
+        "min_completeness": "85",
+        "max_contamination": "5",
+        "dnadiff_tmp_dir": "$SNIC_TMP",
+        "merge_clustering_script": "toolbox/scripts/concoct/merge_cutup_clustering.py",
+        "extract_bins_script": "toolbox/scripts/concoct/extract_fasta_bins.py"
     },
     "prodigal_rules": {
         "load_env": "module load bioinfo-tools prodigal/2.6.3 && source activate basic_sandbox",
@@ -98,27 +108,27 @@
     "fastuniq_rules": {
     },
     "megahit_rules": {
-        "load_env": "",
+        "load_env": "source activate snakemake_python2_env",
         "assembly_params": {"default": ""},
-        "coassembly_params": {"default": "-m 0.99 --continue"},
-        "filter_length_script": "BLUEPRINT_pipeline/toolbox/scripts/filter_fasta_on_length.py",
-        "split_in_parts_script": "BLUEPRINT_pipeline/toolbox/scripts/split_fasta.py",
-        "coassembly_pre_annotation_length_threshold": "1000",
-        "coassembly_pre_annotation_sequences_per_part": "20000"
+        "coassembly_params": {"default": "-m 0.99", "meta-sensitive": "--presets meta-sensitive"},
+        "filter_length_script": "toolbox/scripts/filter_fasta_on_length.py",
+        "split_in_parts_script": "toolbox/scripts/split_fasta.py",
+        "coassembly_pre_annotation_length_threshold": "200",
+        "coassembly_pre_annotation_sequences_per_part": "40000"
     },
     "prokka_extended_rules": {
         "dbs": ["cog", "pfam", "tigr"],
         "prokka_name": "prokka_mod",
-        "load_env": "source activate concoct && module load bioinfo-tools BioPerl blast/2.2.28+ hmmer prodigal/2.6.3 gnuparallel",
+        "load_env": "source activate snakemake_python2_env && module load bioinfo-tools BioPerl/1.6.924_Perl5.18.4 blast/2.2.28+ hmmer prodigal/2.6.3 gnuparallel",
         "cddid_all": "/proj/b2010008/nobackup/database/cddid_all.tbl",
-        "get_prokka_annotation_script": "BLUEPRINT_pipeline/toolbox/scripts/extended_prokka/get.prokka.annotation.py",
-        "collate_annotations_script": "BLUEPRINT_pipeline/toolbox/scripts/extended_prokka/collate.annotations.py",
-        "gff_to_bed_script": "BLUEPRINT_pipeline/toolbox/scripts/extended_prokka/prokkagff2bed.sh", 
+        "get_prokka_annotation_script": "toolbox/scripts/extended_prokka/get.prokka.annotation.py",
+        "collate_annotations_script": "toolbox/scripts/extended_prokka/collate.annotations.py",
+        "gff_to_bed_script": "toolbox/scripts/extended_prokka/prokkagff2bed.sh", 
         "cog_categories_script": "toolbox/scripts/extended_prokka/cog_categories.py",
         "cog_categories_data": "toolbox/scripts/extended_prokka/data/cogs.csv",
         "prokka_ops": "--metagenome",
         "EXTEND": {
-            "gff": "BLUEPRINT_pipeline/toolbox/scripts/extended_prokka/extend_gff.py"
+            "gff": "toolbox/scripts/extended_prokka/extend_gff.py"
         },
         "contigs": {},
         "threads": "4",
