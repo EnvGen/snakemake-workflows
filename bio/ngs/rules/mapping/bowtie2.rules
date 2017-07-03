@@ -114,7 +114,7 @@ rule bowtie2_index_large:
     shell:
         """
         {config[bowtie2_rules][load_env]}
-        bowtie2-build {input} {params.prefix}
+        bowtie2-build --large-index {input} {params.prefix}
         """
 
 
