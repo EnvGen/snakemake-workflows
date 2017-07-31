@@ -65,12 +65,18 @@ rule bowtie2_index:
         expand("mapping/bowtie2/{{reference}}.{index}.bt2", index=range(1,5)),
         expand("mapping/bowtie2/{{reference}}.rev.{index}.bt2", index=range(1,3))
     params:
-        prefix="mapping/bowtie2/{reference}"
-    shell:
-        """
-        {config[bowtie2_rules][load_env]}
-        bowtie2-build {input} {params.prefix}
-        """
+        prefix="mapping/bowtie2/{reference}",
+        tmp_dir=config['global_tmp_dir']
+    run:
+        if input[0].endswith('.gz'):
+            only_file_without_ext=os.path.splitext(os.path.basename(input[0]))[0]
+            new_input=params['tmp_dir'] + '/' + only_file_without_ext 
+            additional_first_command = 'gzip -cd {0} > {1}'.format(input[0], new_input)
+        else:
+            new_input=input[0]
+            additional_first_command = ''
+        print(additional_first_command)
+        shell("{config[bowtie2_rules][load_env]}; {additional_first_command}; bowtie2-build {new_input} {params.prefix}")
 
 
 rule bowtie2_map:
