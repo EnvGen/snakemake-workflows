@@ -88,6 +88,36 @@ rule internal_standards_mapped_bam_to_fastq:
            bamtools filter -isFirstMate false -in {input} | bamtools convert -format fastq | gzip -c > {output.R2}
         """
 
+rule internal_standards_blast_database:
+    input:
+        internal_reference = "internal_standards/references/{reference}/Contigs.fa"
+    output:
+        expand("internal_standards/blast_genome_coverage/db/{{reference}}/Contigs.fa.{ext}", ext=["nhr", "nin", "nsq"])
+    params:
+        database_name="internal_standards/blast_genome_coverage/db/{reference}/Contigs.fa",
+        load_env = config["internal_standards"]["load_env"]
+    shell:
+        """{params.load_env}
+           makeblastdb -in {input} -out {params.database_name} -input_type fasta -dbtype nucl
+        """
+
+rule internal_standards_blast_search:
+    input:
+        database_files = lambda wildcards: expand("internal_standards/blast_genome_coverage/db/{genome_reference}/Contigs.fa.{ext}", ext=["nhr", "nin", "nsq"], genome_reference=wildcards.genome_reference),
+        query = lambda wildcards: config["bowtie2_rules"]["references"][wildcards.reference]
+    output:
+        "internal_standards/blast_genome_coverage/results/{genome_reference}/{reference}/blast.out"
+    params:
+        database_name="internal_standards/blast_genome_coverage/db/{genome_reference}/Contigs.fa",
+        load_env = config["internal_standards"]["load_env"]
+    shell:
+        """{params.load_env}
+            zcat {input.query} | \
+                parallel \
+                    --pipe -k --block 100k --recstart '>' --no-notice \
+                    blastn -db {params.database_name} -query - -outfmt 6 > {output}
+        """
+
 rule internal_standards_all:
     input:
         R1 = expand("internal_standards/unmapped_reads/{sample}_R1.fq.gz",
