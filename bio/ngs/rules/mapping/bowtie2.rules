@@ -102,8 +102,7 @@ rule bowtie2_map:
         --rg 'SM:{params.sample}\\tPL:{config[bowtie2_rules][platform]}' \
         -x {params.ref_idx_base} \
         -p {threads} {params.read_input_str} \
-        2> {log} | samtools view -Sbh -@ {threads} - > {output} && \
-        rm {params.sam}
+        2> {log} | samtools view -Sbh -@ {threads} - > {output}
         """
 
 rule bowtie2_index_large:
