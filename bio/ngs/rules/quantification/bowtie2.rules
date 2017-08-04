@@ -38,6 +38,30 @@ rule bowtie2_quant_genes_htseq_counts:
             htseq-count -f 'bam' -r 'name' -s 'no' -a 0 -t 'CDS' -i 'ID' -m 'union' {input.bam} {input.gff2} | gzip > {output}
         """
 
+UNIT_TO_SAMPLE = {
+    unit: sample for sample, units in config["bowtie2_rules"]["samples"].items()
+    for unit in units}
+
+rule bowtie2_quant_read_length:
+    input:
+        read_files = lambda wildcards: config['bowtie2_rules']['units'][wildcards.sample]
+    output:
+        "quantification/bowtie2_genes/read_lengths/{sample_group}/{sample}.tsv"
+    params:
+        read_length_script = config['bowtie2_quant_rules']['read_length_script']
+    shell:
+        """python {params.read_length_script} <(cat <(seqtk sample -s11 {input.read_files[0]} 1000) <(seqtk sample -s11 {input.read_files[1]} 1000)) --sample_name {wildcards.sample} >> {output}"""
+    
+
+rule bowtie2_quant_read_length_sample_group:
+    input:
+        lambda wildcards: expand("quantification/bowtie2_genes/read_lengths/{sample_group}/{sample}.tsv", 
+                                    sample=config["bowtie2_quant_rules"]["sample_groups"][wildcards.sample_group], 
+                                    sample_group=wildcards.sample_group)
+    output:
+        "quantification/bowtie2_genes/read_lengths/{sample_group}.tsv"
+    shell:
+        """cat {input} > {output}"""
 
 rule bowtie2_tpm_gene_table:
     input:
@@ -46,7 +70,7 @@ rule bowtie2_tpm_gene_table:
             split_ref_set = wildcards.split_ref_set,
             sample = config["bowtie2_quant_rules"]["sample_groups"][wildcards.sample_group]
         ),
-        sample_info = "quantification/bowtie2_genes/sample_info.tsv",
+        read_lengths = "quantification/bowtie2_genes/read_lengths/{sample_group}.tsv",
         gff2 = lambda wildcards: "annotation/{gene_prediction}/all_annotated_sequences/{split_ref_set}/proteins.gff2".format(gene_prediction=config["bowtie2_quant_rules"]["gene_prediction"], split_ref_set=wildcards.split_ref_set)
     output:
         "quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/{sample_group}/tpm_table.tsv.gz"
@@ -56,7 +80,7 @@ rule bowtie2_tpm_gene_table:
             python {config[bowtie2_quant_rules][tpm_table_script]} \
                 --sample_names {sample_names} \
                 --coverage_files {input.counts} \
-                --sample_info {input.sample_info} \
+                --sample_info {input.read_lengths} \
                 --gff {input.gff2} \
                 --input_compression 'gzip'  | gzip > {output}
         """)
@@ -110,6 +134,7 @@ rule bowtie2_quant_coverage_annotation_table:
             cat {params.tmp_dir}/header.tsv {params.tmp_dir}/annotated_no_head.tsv | gzip > {output}
             rm {params.tmp_dir}/annotated_no_head.tsv {params.tmp_dir}/header.tsv {params.tmp_dir}/unannotated.tsv
         """
+
 
 rule bowtie2_quant_coverage_annotation_table_all:
     input: expand("quantification/bowtie2_genes/{mapping_params}/{split_ref_set}/annotations/{sample_group}/{type}.{count_unit}.annotated.tsv.gz", \
