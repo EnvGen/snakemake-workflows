@@ -26,7 +26,7 @@ rule concoct_cutup_10K:
     threads: 1
     shell:
         """
-        set +u; {config[concoct_rules][load_env]}; set-u;
+        set +u; {config[concoct_rules][load_env]}; set -u;
         python {config[concoct_rules][scripts_dir]}/cut_up_fasta.py -c {params.chunk_size} -o {params.overlap} \
             -m {input} > {output}
         """
@@ -50,7 +50,7 @@ rule concoct_cutup_10K_zip:
 
 rule concoct_generate_coverage_table_10K:
     input:
-        asm="concoct/{assembly}/cutup/contigs_10K.fasta",
+        asm="concoct/{assembly}/cutup/contigs_10K.fasta.gz",
         bedcovs=expand("mapping/{mapper}/{mapping_params}/{{assembly}}_10K/samples/{samples}.sorted.removeduplicates.coverage.tsv",
                    samples=sorted(config["bowtie2_rules"]["samples"]),
                    mapper=config["concoct_rules"]["mapper"],
@@ -59,7 +59,7 @@ rule concoct_generate_coverage_table_10K:
         "concoct/{assembly}/input_default/concoct_inputtable.tsv",
         "concoct/{assembly}/input_default/concoct_inputtableR.tsv"
     params:
-        sample_names=sorted(config["bowtie2_rules"]["samples"])
+        sample_names=sorted(config["bowtie2_rules"]["samples"]),
     shell:
         """
         set +u; {config[concoct_rules][load_env]}; set -u;
@@ -87,10 +87,11 @@ rule concoct_run_10K:
         clustering="concoct/{assembly}/output_{quant}/{cparams}/clustering.csv"
     params:
         output_folder="concoct/{assembly}/output_{quant}/{cparams}/",
-        concoct_params=lambda wildcards: config["concoct_rules"]["concoct_params"][wildcards.cparams]
+        concoct_params=lambda wildcards: config["concoct_rules"]["concoct_params"][wildcards.cparams]["commandline_params"],
+        load_env=lambda wildcards: config["concoct_rules"]["concoct_params"][wildcards.cparams]["load_env"]
     shell:
         """
-        set +u; {config[concoct_rules][load_env]}; set -u;
+        set +u; {params.load_env}; set -u;
         concoct {params.concoct_params} \
             --coverage_file {input.input_table} \
             --composition_file <(zcat {input.asm}) \
