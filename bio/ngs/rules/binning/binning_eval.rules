@@ -6,58 +6,144 @@ rule concoct_merge_cutup_contigs:
     output:
         "concoct/{assembly}/output_{quant}/{concoct_params}/clustering_nocutup.csv"
     params:
-        merge_script = config["concoct_rules"]["merge_clustering_script"]
+        merge_script = config["concoct_rules"]["merge_clustering_script"],
+        load_env=lambda wildcards: config["concoct_rules"]["concoct_params"][wildcards.concoct_params]["load_env"]
     shell:
-        """ set +u; {config[concoct_rules][load_env]}; set -u
+        """ set +u; {params.load_env}; set -u
             python {params.merge_script} {input} > {output}
          """
 
 
-rule concoct_extract_all_bins_nocutup:
+rule binning_extract_all_bins_nocutup:
     input:
-        clustering="concoct/{assembly}/output_{quant}/{concoct_params}/clustering_nocutup.csv",
+        clustering="binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/clustering_nocutup.csv",
         asm=lambda wildcards: config["concoct_rules"]["assemblies"][wildcards.assembly]
     output:
-        dynamic("concoct/{assembly}/output_{quant}/{concoct_params}/all_bins_nocutup/{cluster_name}.fa")
+        clusters = dynamic("binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/all_bins_nocutup/{cluster_name}.fa")
     params:
-        extract_bins = config["concoct_rules"]["extract_bins_script"],
-        output_path = "concoct/{assembly}/output_{quant}/{concoct_params}/all_bins_nocutup"
+        extract_bins = config["binning_rules"]["extract_bins_script"],
+        output_path = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/all_bins_nocutup",
+        load_env=lambda wildcards: config["binning_rules"]["load_default_env"]
     shell:
         """
-            set +u; {config[concoct_rules][load_env]}; set -u
+            set +u; {params.load_env}; set -u
             mkdir -p {params.output_path}
             python {params.extract_bins} {input.asm} {input.clustering} --output_path {params.output_path}
         """
 
-
 rule concoct_checkm:
     input:
-        lambda wildcards: dynamic("concoct/{0}/output_{1}/{2}/all_bins_nocutup/{{cluster_name}}.fa".format(wildcards.assembly, wildcards.quant, wildcards.concoct_params))
+        # Input is actully all the *.fa files within all_bins_nocutup, but the multiple wildcards
+        # within the dynamic definition never worked since it is missing output files containing '{cluster_name}.fa'
+        "concoct/{assembly}/output_{quant}/{concoct_params}/all_bins_nocutup/0.fa"
     output:
         "concoct/{assembly}/output_{quant}/{concoct_params}/checkm_output/stats.tsv"
     params:
         input_dir = "concoct/{assembly}/output_{quant}/{concoct_params}/all_bins_nocutup",
-        output_dir = "concoct/{assembly}/output_{quant}/{concoct_params}/checkm_output/"
+        output_dir_tmp = "concoct/{assembly}/output_{quant}/{concoct_params}/checkm_output_TMP/",
+        output_dir = "concoct/{assembly}/output_{quant}/{concoct_params}/checkm_output/",
+        load_env=lambda wildcards: config["concoct_rules"]["concoct_params"][wildcards.concoct_params]["load_env"]
     shell:
-        """ set +u; {config[concoct_rules][load_env]}; set -u
-            mkdir -p {params.output_dir}
-            checkm lineage_wf -t 8 -x fa --tab_table -f {output} {params.input_dir} {params.output_dir} """
+        """ set +u; {params.load_env}; set -u
+            mkdir -p {params.output_dir_tmp}
+            checkm lineage_wf -t 8 -x fa --tab_table -f {output} {params.input_dir} {params.output_dir_tmp} 
+            mv {params.output_dir_tmp}* {params.output_dir}
+            rm -r {params.output_dir_tmp} """
 
+rule metabat_clustering_file:
+    input:
+        "metabat/{assembly}/output_{quant}/{binning_params}/all_bins_cutup.1.fa"
+    output:
+        clusters = "metabat/{assembly}/output_{quant}/{binning_params}/clustering.csv"
+    params:
+        input_files = "metabat/{assembly}/output_{quant}/{binning_params}/all_bins_cutup.*.fa",
+    shell:
+        """rm {output}
+           for file in {params.input_files}; do bin_id=`echo $file | cut -f 2 -d '.'`; grep '^>' $file | sed 's/^>//g' | sed "s/$/,$bin_id/g" >> {output}; done"""
+
+rule metabat_merge_cutup_contigs:
+    input:
+        "metabat/{assembly}/output_{quant}/{binning_params}/clustering.csv"
+    output:
+        "metabat/{assembly}/output_{quant}/{binning_params}/clustering_nocutup.csv"
+    params:
+        merge_script = config["concoct_rules"]["merge_clustering_script"],
+        load_env=lambda wildcards: config["metabat_rules"]["load_default_env"]
+    shell:
+        """ set +u; {params.load_env}; set -u
+            python {params.merge_script} {input} > {output}
+         """
+rule metabat_extract_all_bins_nocutup:
+    input:
+        clustering="metabat/{assembly}/output_{quant}/{binning_params}/clustering_nocutup.csv",
+        asm=lambda wildcards: config["concoct_rules"]["assemblies"][wildcards.assembly]
+    output:
+        clusters = dynamic("metabat/{assembly}/output_{quant}/{binning_params}/all_bins_nocutup/{cluster_name}.fa")
+    params:
+        extract_bins = config["concoct_rules"]["extract_bins_script"],
+        output_path = "metabat/{assembly}/output_{quant}/{binning_params}/all_bins_nocutup",
+        load_env=config["metabat_rules"]["load_default_env"]
+    shell:
+        """
+            set +u; {params.load_env}; set -u
+            mkdir -p {params.output_path}
+            python {params.extract_bins} {input.asm} {input.clustering} --output_path {params.output_path}
+        """
+
+rule metabat_checkm:
+    input:
+        # Input is actully all the *.fa files within all_bins_nocutup, but the multiple wildcards
+        # within the dynamic definition never worked since it is missing output files containing '{cluster_name}.fa'
+        "metabat/{assembly}/output_{quant}/{binning_params}/all_bins_nocutup/1.fa"
+    output:
+        "metabat/{assembly}/output_{quant}/{binning_params}/checkm_output/stats.tsv"
+    params:
+        input_dir = "metabat/{assembly}/output_{quant}/{binning_params}/all_bins_nocutup",
+        output_dir_tmp = "metabat/{assembly}/output_{quant}/{binning_params}/checkm_output_TMP/",
+        output_dir = "metabat/{assembly}/output_{quant}/{binning_params}/checkm_output/",
+        load_env=config["metabat_rules"]["load_default_env"]
+    shell:
+        """ set +u; {params.load_env}; set -u
+            mkdir -p {params.output_dir_tmp}
+            checkm lineage_wf -t 8 -x fa --tab_table -f {output} {params.input_dir} {params.output_dir_tmp} 
+            mv {params.output_dir_tmp}* {params.output_dir}
+            rm -r {params.output_dir_tmp} """
+
+rule metabat_extract_approved_scg_bins:
+    input:
+        one_fa = "metabat/{assembly}/output_{quant}/{binning_params}/all_bins_nocutup/1.fa",
+        checkm_stats = "metabat/{assembly}/output_{quant}/{binning_params}/checkm_output/stats.tsv"
+    output:
+        "metabat/{assembly}/output_{quant}/{binning_params}/all_approved_bins_nocutup/default_output.txt"
+    params:
+        approve_bins_script = config["concoct_rules"]["approve_bins_script"],
+        input_dir = "metabat/{assembly}/output_{quant}/{binning_params}/all_bins_nocutup",
+        output_dir = "metabat/{assembly}/output_{quant}/{binning_params}/all_approved_bins_nocutup",
+        min_comp = config["concoct_rules"]["min_completeness"],
+        max_cont = config["concoct_rules"]["max_contamination"],
+        load_env=lambda wildcards: config["metabat_rules"]["binning_params"][wildcards.binning_params]["load_env"]
+    shell:
+        """ set +u {params.load_env}; set -u
+            python {params.approve_bins_script} {params.input_dir} {input.checkm_stats} {params.output_dir} --min_completeness {params.min_comp} --max_contamination {params.max_cont}
+            touch {output}
+        """
 rule concoct_extract_approved_scg_bins:
     input:
-        lambda wildcards: dynamic("concoct/{0}/output_{1}/{2}/all_bins_nocutup/{{cluster_name}}.fa".format(wildcards.assembly, wildcards.quant, wildcards.concoct_params)),
+        one_fa = "concoct/{assembly}/output_{quant}/{concoct_params}/all_bins_nocutup/0.fa",
         checkm_stats = "concoct/{assembly}/output_{quant}/{concoct_params}/checkm_output/stats.tsv"
     output:
-        dynamic("concoct/{assembly}/output_{quant}/{concoct_params}/all_approved_bins_nocutup/{cluster_name}.fa")
+        "concoct/{assembly}/output_{quant}/{concoct_params}/all_approved_bins_nocutup/default_output.txt"
     params:
         approve_bins_script = config["concoct_rules"]["approve_bins_script"],
         input_dir = "concoct/{assembly}/output_{quant}/{concoct_params}/all_bins_nocutup",
         output_dir = "concoct/{assembly}/output_{quant}/{concoct_params}/all_approved_bins_nocutup",
         min_comp = config["concoct_rules"]["min_completeness"],
-        max_cont = config["concoct_rules"]["max_contamination"]
+        max_cont = config["concoct_rules"]["max_contamination"],
+        load_env=lambda wildcards: config["concoct_rules"]["concoct_params"][wildcards.concoct_params]["load_env"]
     shell:
-        """ set +u {config[concoct_rules][load_env]}; set -u
+        """ set +u {params.load_env}; set -u
             python {params.approve_bins_script} {params.input_dir} {input.checkm_stats} {params.output_dir} --min_completeness {params.min_comp} --max_contamination {params.max_cont}
+            touch {output}
         """
 
 rule concoct_extract_approved_scg_bins_all:
@@ -77,11 +163,12 @@ rule concoct_dnadiff_dist_matrix:
         "concoct/dnadiff_dist_matrix/hclust_heatmap.pdf",
         "concoct/dnadiff_dist_matrix/hclust_dendrogram.pdf"
     params:
-        tmp_dir = config["concoct_rules"]["dnadiff_tmp_dir"]
+        tmp_dir = config["concoct_rules"]["dnadiff_tmp_dir"],
+        load_env=lambda wildcards: config["concoct_rules"]["concoct_params"][wildcards.concoct_params]["load_env"]
     run:
         sorted_input = sorted(input.clusters)
         shell("""
-        set +u; {config[concoct_rules][load_env]}; set -u
+        set +u; {params.load_env}; set -u
         mkdir -p {params.tmp_dir}
         python {config[concoct_rules][scripts_dir]}/dnadiff_dist_matrix.py \
             {params.tmp_dir} {sorted_input}
@@ -123,9 +210,11 @@ rule concoct_eval_cog_plot_merged:
         "concoct/{assembly}/evaluation/scg/{concoct_params}/clustering_scg_merged.tsv"
     output:
         "concoct/{assembly}/evaluation/scg/{concoct_params}/clustering_scg_merged.pdf"
+    params:
+        load_env=lambda wildcards: config["concoct_rules"]["concoct_params"][wildcards.concoct_params]["load_env"]
     shell:
         """
-        set +u; {config[concoct_rules][load_env]}; set -u
+        set +u; {params.load_env}; set -u
         Rscript {config[concoct_rules][scripts_dir]}/COGPlot.R \
             -s {input} \
             -o {output}
@@ -140,9 +229,11 @@ rule concoct_eval_cog_plot:
         "concoct/{assembly}/evaluation/scg/{concoct_params}/clustering_scg.tsv"
     output:
         "concoct/{assembly}/evaluation/scg/{concoct_params}/clustering_scg.pdf"
+    params:
+        load_env=lambda wildcards: config["concoct_rules"]["concoct_params"][wildcards.concoct_params]["load_env"]
     shell:
         """
-        set +u; {config[concoct_rules][load_env]}; set -u
+        set +u; {params.load_env}; set -u
         Rscript {config[concoct_rules][scripts_dir]}/COGPlot.R \
             -s {input} \
             -o {output}
@@ -218,9 +309,11 @@ rule concoct_eval_cog_table_merged:
         rpsblast="blast/rpsblast/default-concoct/cog/{assembly}/rpsblast.out"
     output:
         "concoct/{assembly}/evaluation/scg/{concoct_params}/clustering_scg_merged.tsv"
+    params:
+        load_env=lambda wildcards: config["concoct_rules"]["concoct_params"][wildcards.concoct_params]["load_env"]
     shell:
         """
-        set +u {config[concoct_rules][load_env]}; set -u
+        set +u {params.load_env}; set -u
         python {config[concoct_rules][scripts_dir]}/COG_table.py \
             -b {input.rpsblast} \
             -m {config[concoct_rules][scripts_dir]}/../scgs/scg_cogs_min0.97_max1.03_unique_genera.txt \
