@@ -1,4 +1,5 @@
 {
+    "global_tmp_dir": "$SNIC_TMP",
     "bowtie2_rules": {
         "load_env": "module load bioinfo-tools bowtie2/2.2.6 samtools/1.1",
         "platform": "Illumina",
@@ -18,12 +19,64 @@
         "load_env": "module load bioinfo-tools kallisto/0.43.0",
         "inputtable_script":  "toolbox/scripts/kallisto_concoct/input_table.py"
     },
-    "concoct_rules": {
-        "load_env": "source activate snakemake_python2_env && module load bioinfo-tools prodigal/2.6.3 hmmer/3.1b2 MUMmer/3.23 # CONCOCT dev f4cb9fcb",
+    "metabat_rules": {
+        "load_default_env": "source activate binning_checkm && module load bioinfo-tools hmmer",
+        "binning_params": {
+            "default": {
+                "load_env": "module load bioinfo-tools MetaBat",
+                "commandline_params": "--minContig 1500"
+                }
+        }
+    },
+    "binning_rules": {
         "mapper": "bowtie2",
-        "mapping_params": "default",
+        "mapping_params": "local",
+        "load_default_env": "source activate concoct_0.4.1 && module load bioinfo-tools hmmer/3.1b2 prodigal/2.60 samtools/1.5"
+        "scripts_dir": "CONCOCT/scripts",
+        "approve_bins_script": "toolbox/scripts/concoct/approve_bins_from_checkm.py",
+        "min_completeness": "75",
+        "max_contamination": "5",
+        "dnadiff_tmp_dir": "$SNIC_TMP",
+        "merge_clustering_script": "toolbox/scripts/concoct/merge_cutup_clustering.py",
+        "extract_bins_script": "toolbox/scripts/concoct/extract_fasta_bins.py"
+    },
+    "concoct_rules": {
+        "mapper": "bowtie2",
+        "mapping_params": "local",
+        "load_env": "source activate concoct_0.4.1 && module load bioinfo-tools hmmer/3.1b2 prodigal/2.60 samtools/1.5",
         "concoct_params": {
-            "cutoff-1000-maxcluster-1000": "-c 1000 -l 1000"
+            "cutoff-1000-maxcluster-400-0.4.1": {
+                "commandline_params": "-c 400 -l 1000",
+                "load_env": "source activate concoct_0.4.1 && module load bioinfo-tools hmmer/3.1b2 prodigal/2.60 samtools/1.5"
+            },
+            "cutoff-1000-maxcluster-400-SpeedUp_Mp": {
+                "commandline_params": "-c 400 -l 1000 -t 16",
+                "load_env": "source activate concoct_speedup_mp && module load bioinfo-tools hmmer/3.1b2 prodigal/2.60 samtools/1.5"
+            },
+            "cutoff-1000-maxcluster-400-SpeedUp_Mp_pca_k_0": {
+                "commandline_params": "-c 400 -l 1000 -t 16 -k 0",
+                "load_env": "source activate concoct_speedup_mp && module load bioinfo-tools hmmer/3.1b2 prodigal/2.60 samtools/1.5"
+            },
+            "cutoff-1000-maxcluster-400-SpeedUp_Mp_pca_k_0": {
+                "commandline_params": "-c 400 -l 1000 -t 16 -k 0",
+                "load_env": "source activate concoct_speedup_mp && module load bioinfo-tools hmmer/3.1b2 prodigal/2.60 samtools/1.5"
+            },
+            "cutoff-1000-maxcluster-400-SpeedUp_Mp_pca_k_1": {
+                "commandline_params": "-c 400 -l 1000 -t 16 -k 1",
+                "load_env": "source activate concoct_speedup_mp && module load bioinfo-tools hmmer/3.1b2 prodigal/2.60 samtools/1.5"
+            },
+            "cutoff-1000-maxcluster-400-SpeedUp_Mp_pca_k_2": {
+                "commandline_params": "-c 400 -l 1000 -t 16 -k 2",
+                "load_env": "source activate concoct_speedup_mp && module load bioinfo-tools hmmer/3.1b2 prodigal/2.60 samtools/1.5"
+            },
+            "cutoff-1000-maxcluster-400-SpeedUp_Mp_pca_k_3": {
+                "commandline_params": "-c 400 -l 1000 -t 16 -k 3",
+                "load_env": "source activate concoct_speedup_mp && module load bioinfo-tools hmmer/3.1b2 prodigal/2.60 samtools/1.5"
+            },
+            "cutoff-1000-maxcluster-400-SpeedUp_Mp_pca_100_k_0": {
+                "commandline_params": "-c 400 -l 1000 -t 16 -k 0  --total_percentage_pca 100",
+                "load_env": "source activate concoct_speedup_mp && module load bioinfo-tools hmmer/3.1b2 prodigal/2.60 samtools/1.5"
+            }
         },
         "scripts_dir": "CONCOCT/scripts",
         "approve_bins_script": "toolbox/scripts/concoct/approve_bins_from_checkm.py",
