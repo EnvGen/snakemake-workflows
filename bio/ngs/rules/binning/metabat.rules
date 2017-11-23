@@ -13,26 +13,37 @@ for cr in CONFIG_REQS:
 
 
 #  add 10K cutup as references for bowtie2 to map against
-#config["bowtie2_rules"].setdefault("references", {}).update({a + "_10K": "concoct/{a}/cutup/contigs_10K.fasta".format(a=a) for a in config["concoct_rules"]["assemblies"]})
+#config["bowtie2_rules"].setdefault("references", {}).update({a + "_10K": "binning/concoct/{a}/cutup/contigs_10K.fasta".format(a=a) for a in config["concoct_rules"]["assemblies"]})
 
 rule metabat_cutup_10K:
     input:
-        "concoct/{assembly}/cutup/contigs_10K.fasta.gz"
+        "binning/concoct/{assembly}/cutup/contigs_10K.fasta.gz"
     output:
-        "metabat/{assembly}/input_10K_default/contigs.fasta.gz"
+        "binning/metabat/{assembly}/input_{quant}/contigs_10K.fasta.gz"
     shell:
         """
-        ln -s {input} {output}
+        ln -s ../../../../{input} {output}
+        """
+
+rule metabat_default_inputtable:
+    input:
+        "binning/concoct/{assembly}/input_{quant}/concoct_inputtableR.tsv"
+    output:
+        "binning/metabat/{assembly}/input_{quant}/concoct_inputtableR.tsv"
+    shell:
+        """
+        ln -s ../../../../{input} {output}
         """
 
 rule metabat_generate_coverage_table_10K:
     input:
-        bam=expand("mapping/{mapper}/{mapping_params}/{{assembly}}_10K/samples/{samples}.sorted.removeduplicates.bam",
+        bam=lambda wildcards: expand("mapping/{mapper}/{mapping_params}/{assembly}_10K/samples/{samples}.sorted.removeduplicates.bam",
                    samples=sorted(config["bowtie2_rules"]["samples"]),
                    mapper=config["concoct_rules"]["mapper"],
-                   mapping_params=config["concoct_rules"]["mapping_params"])
+                   mapping_params=config["concoct_rules"]["mapping_params"],
+                   assembly=wildcards.assembly)
     output:
-        "metabat/{assembly}/input_10K_default/depth.tsv"
+        "binning/metabat/{assembly}/input_{quant}/depth_10K.tsv"
     params:
         sample_names=sorted(config["bowtie2_rules"]["samples"]),
     shell:
@@ -41,33 +52,37 @@ rule metabat_generate_coverage_table_10K:
         jgi_summarize_bam_contig_depths --outputDepth {output} {input.bam}        
         """
 
-rule metabat_run_10K:
+rule metabat_run:
     input:
-        asm="metabat/{assembly}/input_{quant}/contigs.fasta.gz",
-        input_table="metabat/{assembly}/input_{quant}/depth.tsv"
+        asm="binning/metabat/{assembly}/input_{quant}/contigs_10K.fasta.gz",
+        input_table=lambda wildcards: "binning/metabat/{assembly}/input_{quant}/".format(assembly=wildcards.assembly, quant=wildcards.quant) + config["binning_rules"]["quant_params"][wildcards.quant]["input_table"]
     output:
-        default_output="metabat/{assembly}/output_{quant}/{cparams}/binning_done.txt",
-        bin1="metabat/{assembly}/output_{quant}/{cparams}/all_cutup_bins/bin.1.fa"
+        default_output="binning/metabat/{assembly}/output_{quant}/{cparams}/binning_done.txt",
+        bin1="binning/metabat/{assembly}/output_{quant}/{cparams}/all_bins_cutup/bin.1.fa"
     params:
-        output_folder="metabat/{assembly}/output_{quant}/{cparams}/all_cutup_bins",
+        output_folder=lambda wildcards: "binning/metabat/{assembly}/output_{quant}/{cparams}/all_bins_cutup",
         binning_params=lambda wildcards: config["metabat_rules"]["binning_params"][wildcards.cparams]["commandline_params"],
-        load_env=lambda wildcards: config["metabat_rules"]["binning_params"][wildcards.cparams]["load_env"]
+        quant_binning_params=lambda wildcards: config["metabat_rules"]["quant_commandline_params"][wildcards.quant],
+        load_env=lambda wildcards: config["metabat_rules"]["binning_params"][wildcards.cparams]["load_env"],
+        tmp_dir="$TMPDIR"
     shell:
         """
         set +u; {params.load_env}; set -u;
+        # Start by sorting inputtable        
+        paste <(cut -f 1 {input.input_table} | cut -f 2 -d '_') {input.input_table} | sort -n | sed "s/^[0-9]*\s//" > {params.tmp_dir}/input_table.sorted.tsv
         mkdir -p {params.output_folder}
         metabat -i {input.asm} -o {params.output_folder}/bin \
-        -a {input.input_table} {params.binning_params} -t 16 --seed 11 -v &&
+        -a {params.tmp_dir}/input_table.sorted.tsv {params.binning_params} {params.quant_binning_params} -t 16 --seed 11 -v &&
         touch {output.default_output}
         """
 
 rule metabat_clustering_file:
     input:
-        "metabat/{assembly}/output_{quant}/{binning_params}/all_cutup_bins/bin.1.fa"
+        "binning/metabat/{assembly}/output_{quant}/{binning_params}/all_bins_cutup/bin.1.fa"
     output:
-        clusters = "metabat/{assembly}/output_{quant}/{binning_params}/clustering.csv"
+        clusters = "binning/metabat/{assembly}/output_{quant}/{binning_params}/clustering.csv"
     params:
-        input_files = "metabat/{assembly}/output_{quant}/{binning_params}/all_bins_cutup/bin.*.fa",
+        input_files = "binning/metabat/{assembly}/output_{quant}/{binning_params}/all_bins_cutup/bin.*.fa",
     shell:
         """rm {output}
            for file in {params.input_files}; do bin_id=`echo $file | cut -f 2 -d '.'`; grep '^>' $file | sed 's/^>//g' | sed "s/$/,$bin_id/g" >> {output}; done"""
@@ -75,12 +90,12 @@ rule metabat_clustering_file:
 
 rule merge_metabat_results:
     input:
-        "metabat/{assembly}/output_{quant}/{binning_params}/clustering.csv"
+        "binning/metabat/{assembly}/output_{quant}/{binning_params}/clustering.csv"
     output:
-        "metabat/{assembly}/output_{quant}/{binning_params}/clustering_merged.csv"
+        "binning/metabat/{assembly}/output_{quant}/{binning_params}/clustering_merged.csv"
     shell:
         """
             {config[metabat_rules][load_default_env]}
-            python {config[toolbox_dir]}/scripts/concoct/majority_merge_cutup_clustering.py {input} > {output}
+            python {config[toolbox_dir]}/scripts/binning/concoct/majority_merge_cutup_clustering.py {input} > {output}
         """
 
