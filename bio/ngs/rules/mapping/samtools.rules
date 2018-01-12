@@ -116,14 +116,15 @@ rule remove_mark_duplicates:
     log:
         "{prefix}.sorted.removeduplicates.log"
     params:
-        java_opt="-Xms2g -Xmx32g -XX:MaxPermSize=2g -XX:+CMSClassUnloadingEnabled"
+        java_opt="-Xms2g -Xmx31g -XX:MaxPermSize=2g -XX:+CMSClassUnloadingEnabled",
+        threads="4" # hardcoded since max memory was hard coded to 31
     shell:
         """
-        java {params.java_opt} -XX:ParallelGCThreads={threads} \
+        java {params.java_opt} -XX:ParallelGCThreads={params.threads} \
             -jar {config[samtools_rules][picard_jars]}/MarkDuplicates.jar \
             INPUT={input} \
             OUTPUT={output[0]} \
-            COMPRESSION_LEVEL=9 \
+            COMPRESSION_LEVEL=6 \
             METRICS_FILE={output[1]} \
             AS=TRUE \
             VALIDATION_STRINGENCY=LENIENT \

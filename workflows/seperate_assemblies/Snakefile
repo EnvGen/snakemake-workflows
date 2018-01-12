@@ -149,6 +149,7 @@ include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/assembly/megahit.rules")
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/binning/concoct.rules")
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/binning/concoct_eval.rules")
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/annotation/prodigal.rules")
+include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/quality_control/internal_standards.rules")
 
 rule preprocess_all:
     input:
