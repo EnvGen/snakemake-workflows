@@ -55,9 +55,9 @@ rule kallisto_quant_all:
 rule kallisto_concoct_inputtable:
     input:
         lambda wildcards: expand("quantification/kallisto/quant/{reference}_10K/samples/{{sample}}/abundance.tsv.gz".format(reference=wildcards.assembly),
-            sample=config["kallisto_rules"]["samples"])
+            sample=sorted(config["kallisto_rules"]["samples"]))
     output:
-        "concoct/{assembly}/input_kallisto/concoct_inputtableR.tsv"
+        "binning/concoct/{assembly}/input_kallisto/concoct_inputtableR.tsv"
     params:
         sample_names=sorted(config["kallisto_rules"]["samples"])
     shell:

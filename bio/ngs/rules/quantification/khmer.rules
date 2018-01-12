@@ -1,0 +1,68 @@
+rule khmer_index:
+    input:
+        lambda wildcards: config["kallisto_rules"]["samples"][wildcards.sample],
+    output:
+        index="quantification/khmer/indices/{sample}.khix.gz"
+    params:
+        tmp_dir=config["global_tmp_dir"],
+        load_env = config["khmer_rules"]["load_env"],
+        tmp_output_file = "{sample}.khix"
+    shell:
+        """
+        set +u; {params.load_env}; set -u;
+        load-into-counting.py -k 31 -U 1000000000 -M 127000000000 -T 16 --force {params.tmp_dir}/{params.tmp_output_file} {input}
+        pigz -p 16 -c {params.tmp_dir}/{params.tmp_output_file} > {output}
+        """
+
+rule khmer_quant_sample:
+    input:
+        reference=lambda wildcards: config["kallisto_rules"]["references"][wildcards.reference],
+        reads=lambda wildcards: config["kallisto_rules"]["samples"][wildcards.sample],
+        index="quantification/khmer/indices/{sample}.khix.gz"
+    output:
+        "quantification/khmer/quant/{reference}/samples/{sample}/abundance.csv.gz"
+    params:
+        tmp_dir=config["global_tmp_dir"],
+        outdir="quantification/khmer/quant/{reference}/samples/{sample}/",
+        tmp_index="{sample}.khix"
+    shell:
+        """
+        {config[khmer_rules][load_env]}
+        unpigz -c -p 16 {input.index} > {params.tmp_dir}/{params.tmp_index}
+        count-median.py {params.tmp_dir}/{params.tmp_index} {input.reference} {params.outdir}/abundance.csv
+        pigz -p 16 {params.outdir}/abundance.csv
+        """
+
+rule khmer_concoct_inputtable:
+    input:
+        quants=lambda wildcards: expand("quantification/khmer/quant/{reference}_10K/samples/{sample}/abundance.csv.gz",
+            reference=wildcards.assembly,
+            sample=sorted(config["kallisto_rules"]["samples"]))
+    output:
+        "binning/concoct/{assembly}/input_khmer/concoct_inputtableR.tsv"
+    params:
+        sample_names=sorted(config["kallisto_rules"]["samples"])
+    shell:
+        """
+        {config[binning_rules][load_default_env]}
+        python {config[khmer_rules][inputtable_script]} \
+            --samplenames <(for s in {params.sample_names}; do echo $s; done) \
+                {input} > {output}
+        """
+
+rule khmer_concoct_inputtable_avg:
+    input:
+        quants=lambda wildcards: expand("quantification/khmer/quant/{reference}_10K/samples/{sample}/abundance.csv.gz",
+            reference=wildcards.assembly,
+            sample=sorted(config["kallisto_rules"]["samples"]))
+    output:
+        "binning/concoct/{assembly}/input_khmer/concoct_inputtableR_avg.tsv"
+    params:
+        sample_names=sorted(config["kallisto_rules"]["samples"])
+    shell:
+        """
+        {config[binning_rules][load_default_env]}
+        python {config[khmer_rules][inputtable_script]} \
+            --column average --samplenames <(for s in {params.sample_names}; do echo $s; done) \
+                {input} > {output}
+        """
