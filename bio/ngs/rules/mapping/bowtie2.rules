@@ -74,7 +74,7 @@ rule bowtie2_index:
             additional_first_command = 'gzip -cd {0} > {1}'.format(input[0], new_input)
         else:
             new_input=input[0]
-            additional_first_command = ''
+            additional_first_command = 'echo "no additional_info"'
         print(additional_first_command)
         shell("{config[bowtie2_rules][load_env]}; {additional_first_command}; bowtie2-build {new_input} {params.prefix}")
 
