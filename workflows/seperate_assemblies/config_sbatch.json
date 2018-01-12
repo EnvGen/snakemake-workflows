@@ -138,10 +138,22 @@
         "days": 2,
         "hours": 0,
         "minutes": 0,
-        "partition": "core",
-        "cores": "10",
+        "partition": "node",
+        "cores": "16",
         "extra_parameters": "--mail-type=END --mail-user=johannes.alneberg@scilifelab.se"
     },
+    "schedule_metabat_clustering_file": "schedule_short",
+    "schedule_metabat_default_inputtable": "schedule_short",
+    "schedule_metabat_cutup_10K": "schedule_short",
+    "schedule_metabat_generate_coverage_table_10K": {
+        "days": 0,
+        "hours": 12,
+        "minutes": 0,
+        "partition": "node",
+        "cores": 16,
+        "extra_parameters": ""
+    },
+    "schedule_metabat_run": "schedule_metabat_generate_coverage_table_10K",
     "schedule_bam_sort": {
         "days": 0,
         "hours": 12,
@@ -160,6 +172,63 @@
     },
     "schedule_sample_merge_no_rmdup": "schedule_short",
     "schedule_bedtools_coverage": "schedule_bowtie2_map",
+    "schedule_gattaca_index": {
+        "days": 0,
+        "hours": 2,
+        "minutes": 0,
+        "partition": "node",
+        "cores": "16",
+        "extra_parameters": ""
+    },
+    "schedule_gattaca_aux_files": {
+        "days": 0,
+        "hours": 1,
+        "minutes": 0,
+        "partition": "core",
+        "cores": "1",
+        "extra_parameters": ""
+    },
+    "schedule_gattaca_quant": {
+        "days": 0,
+        "hours": 12,
+        "minutes": 0,
+        "partition": "node",
+        "cores": "16",
+        "extra_parameters": ""
+    },
+    "schedule_khmer_index": {
+        "days": 0,
+        "hours": 6,
+        "minutes": 0,
+        "partition": "node",
+        "cores": "16",
+        "extra_parameters": ""
+    },
+    "schedule_khmer_quant_sample": {
+        "days": 0,
+        "hours": 6,
+        "minutes": 0,
+        "partition": "node",
+        "cores": "16",
+        "extra_parameters": ""
+    },
+    "schedule_khmer_quant": {
+        "days": 0,
+        "hours": 2,
+        "minutes": 0,
+        "partition": "core",
+        "cores": "1",
+        "extra_parameters": ""
+    },
+    "schedule_khmer_concoct_inputtable_avg": "schedule_khmer_concoct_inputtable",
+    "schedule_khmer_concoct_inputtable": {
+        "days": 0,
+        "hours": 6,
+        "minutes": 0,
+        "partition": "core",
+        "cores": "4",
+        "extra_parameters": ""
+    },
     "schedule_kallisto_index": {
         "days": 0,
         "hours": 6,
@@ -181,11 +250,11 @@
         "hours": 6,
         "minutes": 0,
         "partition": "core",
-        "cores": "1",
+        "cores": "4",
         "extra_parameters": ""
     },
-    "schedule_concoct_merge_cutup_contigs": "schedule_short",
-    "schedule_concoct_extract_all_bins_nocutup": "schedule_short",
+    "schedule_binning_merge_cutup_contigs": "schedule_short",
+    "schedule_binning_extract_all_bins_nocutup": "schedule_short",
     "schedule_prodigal_run": {
         "days": 0,
         "hours": 3,
@@ -194,8 +263,8 @@
         "cores": "1",
         "extra_parameters": ""
     },
-    "schedule_concoct_extract_approved_scg_bins": "schedule_short",
-    "schedule_concoct_checkm": {
+    "schedule_binning_extract_approved_scg_bins": "schedule_short",
+    "schedule_binning_checkm": {
         "days": 0,
         "hours": 3,
         "minutes": 0,
@@ -203,7 +272,6 @@
         "cores": "8",
         "extra_parameters": ""
     },
-    "schedule_metabat_checkm": "schedule_concoct_checkm",
     "schedule_concoct_dnadiff_dist_matrix": {
         "days": 0,
         "hours": 3,

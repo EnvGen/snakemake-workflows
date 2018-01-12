@@ -134,7 +134,7 @@ for assembly_file in glob.glob("assembly/megahit/*/*/final.contigs.fa*"):
 config["assemblies"] = config["concoct_rules"]['assemblies']
 
 #  add 10K cutup as references for bowtie2 to map against
-config["bowtie2_rules"].setdefault("references", {}).update({a + "_10K": "concoct/{a}/cutup/contigs_10K.fasta.gz".format(a=a) for a in config["concoct_rules"]["assemblies"]})
+config["bowtie2_rules"].setdefault("references", {}).update({a + "_10K": "binning/concoct/{a}/cutup/contigs_10K.fasta.gz".format(a=a) for a in config["concoct_rules"]["assemblies"]})
 config["kallisto_rules"]["references"] = config["bowtie2_rules"]["references"]
 config["kallisto_rules"]["samples"] = config["bowtie2_rules"]["units"]
 
@@ -142,6 +142,8 @@ WORKFLOW_DIR = "../../"
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/mapping/samtools.rules")
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/mapping/bowtie2.rules")
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/quantification/kallisto.rules")
+include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/quantification/khmer.rules")
+include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/quantification/gattaca.rules")
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/trimming/cutadapt.rules")
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/quality_control/fastqc.rules")
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/duplicate_removal/fastuniq.rules")
