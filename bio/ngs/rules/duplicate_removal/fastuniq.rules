@@ -34,6 +34,6 @@ rule fastuniq:
             echo {params.fifo_R2} >> {params.file_list}
             fastuniq -i {params.file_list} -t q -o {params.tmp_R1} -p {params.tmp_R2}
             rm {params.fifo_R1} {params.fifo_R2} {params.file_list}
-            parallel gzip --best ::: {params.tmp_R1} {params.tmp_R2}
+            pigz --best {params.tmp_R1} {params.tmp_R2}
         """
 
