@@ -6,8 +6,8 @@ rule binning_merge_cutup_contigs:
     output:
         "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/clustering_nocutup.csv"
     params:
-        merge_script = config["concoct_rules"]["merge_clustering_script"],
-        load_env=lambda wildcards: config["binning_rules"]["load_default_env"]
+        merge_script = config["binning_rules"]["merge_clustering_script"],
+        load_env=config["binning_rules"]["load_default_env"]
     shell:
         """ set +u; {params.load_env}; set -u
             python {params.merge_script} {input} > {output}
@@ -18,8 +18,7 @@ rule binning_extract_all_bins_nocutup:
         clustering="binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/clustering_nocutup.csv",
         asm=lambda wildcards: config["concoct_rules"]["assemblies"][wildcards.assembly]
     output:
-        default_output = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/all_bins_nocutup/default_output.txt",
-        clusters = dynamic("binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/all_bins_nocutup/{cluster_name}.fa")
+        default_output = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/all_bins_nocutup/default_output.txt"
     params:
         extract_bins = config["concoct_rules"]["extract_bins_script"],
         output_path = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/all_bins_nocutup",
@@ -43,7 +42,7 @@ rule binning_checkm:
         input_dir = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/all_bins_nocutup",
         output_dir_tmp = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/checkm_output_TMP/",
         output_dir = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/checkm_output/",
-        load_env=config["binnig_rules"]["load_checkm_env"]
+        load_env=config["binning_rules"]["load_checkm_env"]
     shell:
         """ set +u; {params.load_env}; set -u
             mkdir -p {params.output_dir_tmp}

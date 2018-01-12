@@ -25,14 +25,24 @@ rule metabat_cutup_10K:
         ln -s ../../../../{input} {output}
         """
 
-rule metabat_default_inputtable:
+rule metabat_default_inputtableR:
     input:
         "binning/concoct/{assembly}/input_{quant}/concoct_inputtableR.tsv"
     output:
-        "binning/metabat/{assembly}/input_{quant}/concoct_inputtableR.tsv"
+        "binning/metabat/{assembly}/input_{quant}/concoct_inputtableR.sorted.tsv"
     shell:
         """
-        ln -s ../../../../{input} {output}
+        paste <(cut -f 1 {input} | cut -f 2 -d '_') {input} | sort -n | sed "s/^[0-9]*\s//" > {output}
+        """
+
+rule metabat_default_inputtable:
+    input:
+        "binning/concoct/{assembly}/input_{quant}/concoct_inputtable.tsv"
+    output:
+        "binning/metabat/{assembly}/input_{quant}/concoct_inputtable.sorted.tsv"
+    shell:
+        """
+        paste <(cut -f 1 {input} | cut -f 2 -d '_') {input} | sort -n | sed "s/^[0-9]*\s//" > {output}
         """
 
 rule metabat_generate_coverage_table_10K:
@@ -49,13 +59,13 @@ rule metabat_generate_coverage_table_10K:
     shell:
         """
         set +u; {config[metabat_rules][load_default_env]}; set -u;
-        jgi_summarize_bam_contig_depths --outputDepth {output} {input.bam}        
+        jgi_summarize_bam_contig_depths --outputDepth {output} {input.bam}
         """
 
 rule metabat_run:
     input:
         asm="binning/metabat/{assembly}/input_{quant}/contigs_10K.fasta.gz",
-        input_table=lambda wildcards: "binning/metabat/{assembly}/input_{quant}/".format(assembly=wildcards.assembly, quant=wildcards.quant) + config["binning_rules"]["quant_params"][wildcards.quant]["input_table"]
+        input_table=lambda wildcards: "binning/metabat/{assembly}/input_{quant}/".format(assembly=wildcards.assembly, quant=wildcards.quant) + config["metabat_rules"]["quant_params"][wildcards.quant]["input_table"]
     output:
         default_output="binning/metabat/{assembly}/output_{quant}/{cparams}/binning_done.txt",
         bin1="binning/metabat/{assembly}/output_{quant}/{cparams}/all_bins_cutup/bin.1.fa"
@@ -63,16 +73,13 @@ rule metabat_run:
         output_folder=lambda wildcards: "binning/metabat/{assembly}/output_{quant}/{cparams}/all_bins_cutup",
         binning_params=lambda wildcards: config["metabat_rules"]["binning_params"][wildcards.cparams]["commandline_params"],
         quant_binning_params=lambda wildcards: config["metabat_rules"]["quant_commandline_params"][wildcards.quant],
-        load_env=lambda wildcards: config["metabat_rules"]["binning_params"][wildcards.cparams]["load_env"],
-        tmp_dir="$TMPDIR"
+        load_env=lambda wildcards: config["metabat_rules"]["binning_params"][wildcards.cparams]["load_env"]
     shell:
         """
         set +u; {params.load_env}; set -u;
-        # Start by sorting inputtable        
-        paste <(cut -f 1 {input.input_table} | cut -f 2 -d '_') {input.input_table} | sort -n | sed "s/^[0-9]*\s//" > {params.tmp_dir}/input_table.sorted.tsv
         mkdir -p {params.output_folder}
         metabat -i {input.asm} -o {params.output_folder}/bin \
-        -a {params.tmp_dir}/input_table.sorted.tsv {params.binning_params} {params.quant_binning_params} -t 16 --seed 11 -v &&
+        -a {input.input_table} {params.binning_params} {params.quant_binning_params} -t 16 --seed 11 -v &&
         touch {output.default_output}
         """
 
@@ -86,16 +93,4 @@ rule metabat_clustering_file:
     shell:
         """rm {output}
            for file in {params.input_files}; do bin_id=`echo $file | cut -f 2 -d '.'`; grep '^>' $file | sed 's/^>//g' | sed "s/$/,$bin_id/g" >> {output}; done"""
-
-
-rule merge_metabat_results:
-    input:
-        "binning/metabat/{assembly}/output_{quant}/{binning_params}/clustering.csv"
-    output:
-        "binning/metabat/{assembly}/output_{quant}/{binning_params}/clustering_merged.csv"
-    shell:
-        """
-            {config[metabat_rules][load_default_env]}
-            python {config[toolbox_dir]}/scripts/binning/concoct/majority_merge_cutup_clustering.py {input} > {output}
-        """
 
