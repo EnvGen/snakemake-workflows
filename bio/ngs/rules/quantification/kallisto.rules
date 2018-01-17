@@ -20,7 +20,7 @@ rule kallisto_quant_sample:
     shell:
         """
         {config[kallisto_rules][load_env]}
-        kallisto quant --threads 16 --plaintext -i {input.index} -o {params.outdir} {input.reads}
+        kallisto quant --threads 20 --plaintext -i {input.index} -o {params.outdir} {input.reads}
         gzip {params.outdir}/abundance.tsv
         """
 
