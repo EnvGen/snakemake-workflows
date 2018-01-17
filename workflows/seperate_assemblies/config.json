@@ -271,7 +271,7 @@
     },
     "megahit_rules": {
         "load_env": "",
-        "assembly_params": {"default": "", "meta-sensitive": "--presets meta-sensitive"},
+        "assembly_params": {"default": "", "meta-sensitive": "--presets meta-sensitive -m 0.99"},
         "coassembly_params": {"default": "-m 0.99 --continue"},
         "filter_length_script": "BLUEPRINT_pipeline/toolbox/scripts/filter_fasta_on_length.py",
         "split_in_parts_script": "BLUEPRINT_pipeline/toolbox/scripts/split_fasta.py",

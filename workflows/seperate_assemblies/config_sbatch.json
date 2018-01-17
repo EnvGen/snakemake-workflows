@@ -1,7 +1,7 @@
 {
     "sbatch_general": {
-        "account": "b2017017",
-        "wrapper_script": "/proj/b2010008/bin/sbatch_job"
+        "account": "snic2017-1-581",
+        "wrapper_script": "/proj/uppstore2017125/b2014214/bin/sbatch_job"
     },
     "schedule_short": {
         "days": 0,
@@ -92,20 +92,20 @@
         "extra_parameters": "--mail-type=END --mail-user=johannes.alneberg@scilifelab.se"
     },
     "schedule_megahit_assemble_sample": {
-        "days": 0,
-        "hours": 12,
+        "days": 1,
+        "hours": 0,
         "minutes": 0,
         "partition": "node",
-        "cores": 16,
-        "extra_parameters": "-C mem512GB --mail-type=END --mail-user=johannes.alneberg@scilifelab.se"
+        "cores": 20,
+        "extra_parameters": "-C mem256GB --mail-type=END --mail-user=johannes.alneberg@scilifelab.se"
     },
     "schedule_megahit_coassemble": {
         "days": 8,
         "hours": 0,
         "minutes": 0,
         "partition": "node",
-        "cores": 16,
-        "extra_parameters": "-C mem512GB --mail-type=END --mail-user=johannes.alneberg@scilifelab.se"
+        "cores": 20,
+        "extra_parameters": "-C mem256GB --mail-type=END --mail-user=johannes.alneberg@scilifelab.se"
     },
     "schedule_megahit_coassemble_all": "schedule_short",
     "schedule_ray_assembly_all": "schedule_short",
@@ -234,7 +234,7 @@
         "hours": 6,
         "minutes": 0,
         "partition": "node",
-        "cores": "16",
+        "cores": "20",
         "extra_parameters": ""
     },
     "schedule_kallisto_quant_sample": {
@@ -242,7 +242,7 @@
         "hours": 2,
         "minutes": 0,
         "partition": "node",
-        "cores": "16",
+        "cores": "20",
         "extra_parameters": ""
     },
     "schedule_kallisto_concoct_inputtable": {
