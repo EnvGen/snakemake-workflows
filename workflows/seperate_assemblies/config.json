@@ -66,7 +66,8 @@
         "max_contamination": "5",
         "dnadiff_tmp_dir": "$SNIC_TMP",
         "merge_clustering_script": "toolbox/scripts/concoct/merge_cutup_clustering.py",
-        "extract_bins_script": "toolbox/scripts/concoct/extract_fasta_bins.py"
+        "extract_bins_script": "toolbox/scripts/concoct/extract_fasta_bins.py",
+        "correctly_placed_16S_script": "toolbox/scripts/concoct/correctly_placed_16S.py"
     },
     "concoct_rules": {
         "mapper": "bowtie2",
@@ -203,7 +204,8 @@
         }
     },
     "annotation_rules": {
-        "gene_prediction": "prodigal_default-meta"
+        "gene_prediction": "prodigal_default-meta",
+        "metaxa_load_env": "module load bioinfo-tools usearch/9.2.64 blast/2.6.0+ hmmer/3.1b2 MAFFT/7.310 && export PATH=/proj/uppstore2017125/b2014214/bin:$PATH"
     },
     "annotate_reference": {
         "load_env": "module load bioinfo-tools BioPerl/1.6.1_PERL5.10.1 blast/2.2.28+ hmmer/3.1b1-intel prodigal/2.6.3 gnuparallel"

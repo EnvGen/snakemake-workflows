@@ -1,0 +1,20 @@
+rule run_metaxa2:
+    input: 
+        lambda wildcards: config["assemblies"][wildcards.reference]
+    output:
+        summary = "annotation/metaxa/{reference}/all_contigs.summary.txt",
+        taxonomy = "annotation/metaxa/{reference}/all_contigs.taxonomy.txt"
+    params:
+        output_prefix = "annotation/metaxa/{reference}/all_contigs",
+        tmp_dir = config["global_tmp_dir"],
+        load_env = config["annotation_rules"]["metaxa_load_env"]
+    run:
+        if input[0].endswith('.gz'):
+            only_file_without_ext=os.path.splitext(os.path.basename(input[0]))[0]
+            new_input=params['tmp_dir'] + '/' + only_file_without_ext 
+            additional_first_command = 'gzip -cd {0} > {1}'.format(input[0], new_input)
+        else:
+            new_input=input[0]
+            additional_first_command = 'echo "no additional_info"'
+        shell("{params.load_env}; {additional_first_command}; metaxa2 --plus T -i {new_input} -o {params.output_prefix}")
+
