@@ -279,5 +279,13 @@
         "partition": "core",
         "cores": "1",
         "extra_parameters": ""
+    },
+    "schedule_pigz": {
+        "days": 0,
+        "hours": 3,
+        "minutes": 0,
+        "partition": "node",
+        "cores": "20",
+        "extra_parameters": ""
     }
 }
