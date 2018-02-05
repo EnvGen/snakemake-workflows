@@ -127,9 +127,10 @@ for read_file in glob.glob("finished_reads/*.fq.gz"):
 
 config['concoct_rules']['assemblies'] = {}
 for assembly_file in glob.glob("assembly/megahit/*/*/final.contigs.fa*"):
-    assembly_type = assembly_file.split('/')[2]
-    sample_name = assembly_file.split('/')[3]
-    config['concoct_rules']['assemblies'][assembly_type + '_' + sample_name] = assembly_file
+    if not '-slurm.out' in assembly_file:
+        assembly_type = assembly_file.split('/')[2]
+        sample_name = assembly_file.split('/')[3]
+        config['concoct_rules']['assemblies'][assembly_type + '_' + sample_name] = assembly_file
 
 config["assemblies"] = config["concoct_rules"]['assemblies']
 

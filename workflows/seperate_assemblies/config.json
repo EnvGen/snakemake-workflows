@@ -16,7 +16,7 @@
     },
     "mapping_report_rules": {},
     "kallisto_rules": {
-        "load_env": "module load bioinfo-tools kallisto/0.43.0",
+        "load_env": "module load bioinfo-tools",
         "inputtable_script":  "toolbox/scripts/kallisto_concoct/input_table.py"
     },
     "gattaca_rules": {
@@ -58,7 +58,7 @@
     "binning_rules": {
         "mapper": "bowtie2",
         "mapping_params": "local",
-        "load_default_env": "source activate concoct_0.4.1 && module load bioinfo-tools hmmer/3.1b2 prodigal/2.60 samtools/1.5",
+        "load_default_env": "source activate concoct_0.4.1 && module load bioinfo-tools hmmer/3.1b2 prodigal/2.6.3 samtools/1.5",
         "load_checkm_env": "source activate binning_checkm && module load bioinfo-tools hmmer",
         "scripts_dir": "CONCOCT/scripts",
         "approve_bins_script": "toolbox/scripts/concoct/approve_bins_from_checkm.py",
@@ -72,35 +72,35 @@
     "concoct_rules": {
         "mapper": "bowtie2",
         "mapping_params": "local",
-        "load_env": "source activate concoct_0.4.1 && module load bioinfo-tools hmmer/3.1b2 prodigal/2.60 samtools/1.5",
+        "load_env": "source activate concoct_0.4.1 && module load bioinfo-tools hmmer/3.1b2 prodigal/2.6.3 samtools/1.5",
         "concoct_params": {
             "cutoff-1000-maxcluster-400-0.4.1": {
                 "commandline_params": "-c 400 -l 1000",
-                "load_env": "source activate concoct_0.4.1 && module load bioinfo-tools hmmer/3.1b2 prodigal/2.60 samtools/1.5"
+                "load_env": "source activate concoct_0.4.1 && module load bioinfo-tools hmmer/3.1b2 prodigal/2.6.3 samtools/1.5"
             },
             "cutoff-1000-maxcluster-400-SpeedUp_Mp": {
                 "commandline_params": "-c 400 -l 1000 -t 16 -s 1",
-                "load_env": "source activate concoct_speedup_mp && module load bioinfo-tools hmmer/3.1b2 prodigal/2.60 samtools/1.5"
+                "load_env": "source activate concoct_speedup_mp && module load bioinfo-tools hmmer/3.1b2 prodigal/2.6.3 samtools/1.5"
             },
             "cutoff-1000-maxcluster-400-SpeedUp_Mp_k0": {
                 "commandline_params": "-c 400 -l 1000 -t 16 -s 1 -k 0",
-                "load_env": "source activate concoct_speedup_mp && module load bioinfo-tools hmmer/3.1b2 prodigal/2.60 samtools/1.5"
+                "load_env": "source activate concoct_speedup_mp && module load bioinfo-tools hmmer/3.1b2 prodigal/2.6.3 samtools/1.5"
             },
             "cutoff-1000-maxcluster-400-SpeedUp_Mp_dup1": {
                 "commandline_params": "-c 400 -l 1000 -t 16 -s 2",
-                "load_env": "source activate concoct_speedup_mp && module load bioinfo-tools hmmer/3.1b2 prodigal/2.60 samtools/1.5"
+                "load_env": "source activate concoct_speedup_mp && module load bioinfo-tools hmmer/3.1b2 prodigal/2.6.3 samtools/1.5"
             },
             "cutoff-1000-maxcluster-400-SpeedUp_Mp_dup1_k0": {
                 "commandline_params": "-c 400 -l 1000 -t 16 -s 2 -k 0",
-                "load_env": "source activate concoct_speedup_mp && module load bioinfo-tools hmmer/3.1b2 prodigal/2.60 samtools/1.5"
+                "load_env": "source activate concoct_speedup_mp && module load bioinfo-tools hmmer/3.1b2 prodigal/2.6.3 samtools/1.5"
             },
             "cutoff-1000-maxcluster-400-SpeedUp_Mp_dup2": {
                 "commandline_params": "-c 400 -l 1000 -t 16 -s 3",
-                "load_env": "source activate concoct_speedup_mp && module load bioinfo-tools hmmer/3.1b2 prodigal/2.60 samtools/1.5"
+                "load_env": "source activate concoct_speedup_mp && module load bioinfo-tools hmmer/3.1b2 prodigal/2.6.3 samtools/1.5"
             },
             "cutoff-1000-maxcluster-400-SpeedUp_Mp_dup2_k0": {
                 "commandline_params": "-c 400 -l 1000 -t 16 -s 3 -k 0",
-                "load_env": "source activate concoct_speedup_mp && module load bioinfo-tools hmmer/3.1b2 prodigal/2.60 samtools/1.5"
+                "load_env": "source activate concoct_speedup_mp && module load bioinfo-tools hmmer/3.1b2 prodigal/2.6.3 samtools/1.5"
             },
             "cutoff-1000-maxcluster-400-SpeedUp_Mp_simplepseu": {
                 "commandline_params": "-c 400 -l 1000 -t 16 -s 1 --simple_pseudocount",
@@ -140,71 +140,71 @@
             },
             "cutoff-1000-maxcluster-400-SpeedUp_Mp_standardize": {
                 "commandline_params": "-c 400 -l 1000 -t 16 --standardize --no_cov_normalization --no_total_coverage",
-                "load_env": "source activate concoct_devel && module load bioinfo-tools hmmer/3.1b2 prodigal/2.60 samtools/1.5"
+                "load_env": "source activate concoct_devel && module load bioinfo-tools hmmer/3.1b2 prodigal/2.6.3 samtools/1.5"
             },
             "cutoff-1000-maxcluster-400-SpeedUp_Mp_standardize_k0": {
                 "commandline_params": "-c 400 -l 1000 -t 16 -k 0 --standardize --no_cov_normalization --no_total_coverage",
-                "load_env": "source activate concoct_devel && module load bioinfo-tools hmmer/3.1b2 prodigal/2.60 samtools/1.5"
+                "load_env": "source activate concoct_devel && module load bioinfo-tools hmmer/3.1b2 prodigal/2.6.3 samtools/1.5"
             },
             "cutoff-1000-maxcluster-400-SpeedUp_Mp_standardize_dup1": {
                 "commandline_params": "-c 400 -l 1000 -t 16 -s 2 --standardize --no_cov_normalization --no_total_coverage",
-                "load_env": "source activate concoct_devel && module load bioinfo-tools hmmer/3.1b2 prodigal/2.60 samtools/1.5"
+                "load_env": "source activate concoct_devel && module load bioinfo-tools hmmer/3.1b2 prodigal/2.6.3 samtools/1.5"
             },
             "cutoff-1000-maxcluster-400-SpeedUp_Mp_standardize_dup1_k0": {
                 "commandline_params": "-c 400 -l 1000 -t 16 -s 2 -k 0 --standardize --no_cov_normalization --no_total_coverage",
-                "load_env": "source activate concoct_devel && module load bioinfo-tools hmmer/3.1b2 prodigal/2.60 samtools/1.5"
+                "load_env": "source activate concoct_devel && module load bioinfo-tools hmmer/3.1b2 prodigal/2.6.3 samtools/1.5"
             },
             "cutoff-1000-maxcluster-400-SpeedUp_Mp_standardize_dup2": {
                 "commandline_params": "-c 400 -l 1000 -t 16 -s 3 --standardize --no_cov_normalization --no_total_coverage",
-                "load_env": "source activate concoct_devel && module load bioinfo-tools hmmer/3.1b2 prodigal/2.60 samtools/1.5"
+                "load_env": "source activate concoct_devel && module load bioinfo-tools hmmer/3.1b2 prodigal/2.6.3 samtools/1.5"
             },
             "cutoff-1000-maxcluster-400-SpeedUp_Mp_standardize_dup2_k0": {
                 "commandline_params": "-c 400 -l 1000 -t 16 -s 3 -k 0 --standardize --no_cov_normalization --no_total_coverage",
-                "load_env": "source activate concoct_devel && module load bioinfo-tools hmmer/3.1b2 prodigal/2.60 samtools/1.5"
+                "load_env": "source activate concoct_devel && module load bioinfo-tools hmmer/3.1b2 prodigal/2.6.3 samtools/1.5"
             },
             "cutoff-1000-maxcluster-400-SpeedUp_Mp_standardize_w2": {
                 "commandline_params": "-c 400 -l 1000 -t 16 -s 1 --standardize -w 2 --no_cov_normalization --no_total_coverage",
-                "load_env": "source activate concoct_devel && module load bioinfo-tools hmmer/3.1b2 prodigal/2.60 samtools/1.5"
+                "load_env": "source activate concoct_devel && module load bioinfo-tools hmmer/3.1b2 prodigal/2.6.3 samtools/1.5"
             },
             "cutoff-1000-maxcluster-400-SpeedUp_Mp_standardize_w2_dup1": {
                 "commandline_params": "-c 400 -l 1000 -t 16 -s 2 --standardize -w 2 --no_cov_normalization --no_total_coverage",
-                "load_env": "source activate concoct_devel && module load bioinfo-tools hmmer/3.1b2 prodigal/2.60 samtools/1.5"
+                "load_env": "source activate concoct_devel && module load bioinfo-tools hmmer/3.1b2 prodigal/2.6.3 samtools/1.5"
             },
             "cutoff-1000-maxcluster-400-SpeedUp_Mp_standardize_w2_dup2": {
                 "commandline_params": "-c 400 -l 1000 -t 16 -s 3 --standardize -w 2 --no_cov_normalization --no_total_coverage",
-                "load_env": "source activate concoct_devel && module load bioinfo-tools hmmer/3.1b2 prodigal/2.60 samtools/1.5"
+                "load_env": "source activate concoct_devel && module load bioinfo-tools hmmer/3.1b2 prodigal/2.6.3 samtools/1.5"
             },
             "cutoff-1000-maxcluster-400-SpeedUp_Mp_standardize_w3": {
                 "commandline_params": "-c 400 -l 1000 -t 16 -s 1 --standardize -w 3 --no_cov_normalization --no_total_coverage",
-                "load_env": "source activate concoct_devel && module load bioinfo-tools hmmer/3.1b2 prodigal/2.60 samtools/1.5"
+                "load_env": "source activate concoct_devel && module load bioinfo-tools hmmer/3.1b2 prodigal/2.6.3 samtools/1.5"
             },
             "cutoff-1000-maxcluster-400-SpeedUp_Mp_standardize_w3_dup1": {
                 "commandline_params": "-c 400 -l 1000 -t 16 -s 2 --standardize -w 3 --no_cov_normalization --no_total_coverage",
-                "load_env": "source activate concoct_devel && module load bioinfo-tools hmmer/3.1b2 prodigal/2.60 samtools/1.5"
+                "load_env": "source activate concoct_devel && module load bioinfo-tools hmmer/3.1b2 prodigal/2.6.3 samtools/1.5"
             },
             "cutoff-1000-maxcluster-400-SpeedUp_Mp_standardize_w3_dup2": {
                 "commandline_params": "-c 400 -l 1000 -t 16 -s 3 --standardize -w 3 --no_cov_normalization --no_total_coverage",
-                "load_env": "source activate concoct_devel && module load bioinfo-tools hmmer/3.1b2 prodigal/2.60 samtools/1.5"
+                "load_env": "source activate concoct_devel && module load bioinfo-tools hmmer/3.1b2 prodigal/2.6.3 samtools/1.5"
             },
             "cutoff-1000-maxcluster-400-SpeedUp_Mp_standardize_w4": {
                 "commandline_params": "-c 400 -l 1000 -t 16 -s 1 --standardize -w 4 --no_cov_normalization --no_total_coverage",
-                "load_env": "source activate concoct_devel && module load bioinfo-tools hmmer/3.1b2 prodigal/2.60 samtools/1.5"
+                "load_env": "source activate concoct_devel && module load bioinfo-tools hmmer/3.1b2 prodigal/2.6.3 samtools/1.5"
             },
             "cutoff-1000-maxcluster-400-SpeedUp_Mp_standardize_w4_dup1": {
                 "commandline_params": "-c 400 -l 1000 -t 16 -s 2 --standardize -w 4 --no_cov_normalization --no_total_coverage",
-                "load_env": "source activate concoct_devel && module load bioinfo-tools hmmer/3.1b2 prodigal/2.60 samtools/1.5"
+                "load_env": "source activate concoct_devel && module load bioinfo-tools hmmer/3.1b2 prodigal/2.6.3 samtools/1.5"
             },
             "cutoff-1000-maxcluster-400-SpeedUp_Mp_standardize_w4_dup2": {
                 "commandline_params": "-c 400 -l 1000 -t 16 -s 3 --standardize -w 4 --no_cov_normalization --no_total_coverage",
-                "load_env": "source activate concoct_devel && module load bioinfo-tools hmmer/3.1b2 prodigal/2.60 samtools/1.5"
+                "load_env": "source activate concoct_devel && module load bioinfo-tools hmmer/3.1b2 prodigal/2.6.3 samtools/1.5"
             },
             "cutoff-1000-maxcluster-400-SpeedUp_Mp_standardize_w5": {
                 "commandline_params": "-c 400 -l 1000 -t 16 -s 1 --standardize -w 5 --no_cov_normalization --no_total_coverage",
-                "load_env": "source activate concoct_devel && module load bioinfo-tools hmmer/3.1b2 prodigal/2.60 samtools/1.5"
+                "load_env": "source activate concoct_devel && module load bioinfo-tools hmmer/3.1b2 prodigal/2.6.3 samtools/1.5"
             },
             "cutoff-1000-maxcluster-400-SpeedUp_Mp_standardize_w5_dup1": {
                 "commandline_params": "-c 400 -l 1000 -t 16 -s 2 --standardize -w 5 --no_cov_normalization --no_total_coverage",
-                "load_env": "source activate concoct_devel && module load bioinfo-tools hmmer/3.1b2 prodigal/2.60 samtools/1.5"
+                "load_env": "source activate concoct_devel && module load bioinfo-tools hmmer/3.1b2 prodigal/2.6.3 samtools/1.5"
             },
             "cutoff-1000-maxcluster-400-SpeedUp_Mp_standardize_w5_dup2": {
                 "commandline_params": "-c 400 -l 1000 -t 16 -s 3 --standardize -w 5 --no_cov_normalization --no_total_coverage",
@@ -489,7 +489,7 @@
     },
     "megahit_rules": {
         "load_env": "",
-        "assembly_params": {"default": "", "meta-sensitive": "--presets meta-sensitive"},
+        "assembly_params": {"default": "", "meta-sensitive": "--presets meta-sensitive -m 0.99"},
         "coassembly_params": {"default": "-m 0.99 --continue"},
         "filter_length_script": "BLUEPRINT_pipeline/toolbox/scripts/filter_fasta_on_length.py",
         "split_in_parts_script": "BLUEPRINT_pipeline/toolbox/scripts/split_fasta.py",
