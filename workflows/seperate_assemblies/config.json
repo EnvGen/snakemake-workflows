@@ -16,7 +16,7 @@
     },
     "mapping_report_rules": {},
     "kallisto_rules": {
-        "load_env": "module load bioinfo-tools kallisto/0.43.0",
+        "load_env": "module load bioinfo-tools",
         "inputtable_script":  "toolbox/scripts/kallisto_concoct/input_table.py"
     },
     "gattaca_rules": {
