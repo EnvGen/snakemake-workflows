@@ -1,7 +1,7 @@
 {
     "sbatch_general": {
-        "account": "b2017017",
-        "wrapper_script": "/proj/b2010008/bin/sbatch_job"
+        "account": "snic2017-1-581",
+        "wrapper_script": "/proj/uppstore2017125/b2014214/bin/sbatch_job"
     },
     "schedule_short": {
         "days": 0,
