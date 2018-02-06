@@ -45,11 +45,24 @@ rule binning_checkm:
         load_env=config["binning_rules"]["load_checkm_env"]
     shell:
         """ set +u; {params.load_env}; set -u
+            rm -r {params.output_dir_tmp}
             mkdir -p {params.output_dir_tmp}
             checkm lineage_wf -t 8 -x fa --tab_table -f {output} {params.input_dir} {params.output_dir_tmp} 
             mv {params.output_dir_tmp}* {params.output_dir}
             rm -r {params.output_dir_tmp} """
 
+rule binning_checkm_phylogeny:
+    input:
+        "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/checkm_output/stats.tsv"
+    output:
+        "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/checkm_tree_qa.tsv"
+    params:
+        input_dir = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/checkm_output/",
+        tmp_dir = config['global_tmp_dir'],
+        load_env=config["binning_rules"]["load_checkm_env"]
+    shell:
+        """set +u; {params.load_env}; set -u
+        checkm tree_qa {params.input_dir} -f {output} --tab_table --tmpdir {params.tmp_dir}"""
 
 rule binning_extract_approved_scg_bins:
     input:
@@ -69,6 +82,31 @@ rule binning_extract_approved_scg_bins:
             python {params.approve_bins_script} {params.input_dir} {input.checkm_stats} {params.output_dir} --min_completeness {params.min_comp} --max_contamination {params.max_cont}
             touch {output}
         """
+
+rule binning_list_all_approved_bins:
+    input:
+        "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/all_approved_bins_nocutup/default_output.txt"
+    output:
+        "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/list_of_all_approved_bins_nocutup.tsv"
+    params:
+        input_dir = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/all_approved_bins_nocutup",
+    shell:
+        """ls {params.input_dir}/*.fa | sed 's%^.*/\([0-9]*\).fa%\\1%g' > {output}"""
+
+rule binning_correctly_placed_16S:
+    input:
+        clustering = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/clustering_nocutup.csv",
+        taxonomy = "annotation/metaxa/{assembly}/all_contigs.taxonomy.txt",
+        all_approved =  "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/list_of_all_approved_bins_nocutup.tsv",
+        checkm_taxonomy = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/checkm_tree_qa.tsv"
+    output:
+        stats = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/16S_placement/{level}/stats_per_approved.tsv"
+    params:
+        compare_script = config["binning_rules"]["correctly_placed_16S_script"],
+        outdir = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/16S_placement/{level}"
+    shell:
+        """python {params.compare_script} --clustering_file {input.clustering} --taxonomy_file {input.taxonomy} --all_approved_file {input.all_approved} --checkm_taxonomy_file {input.checkm_taxonomy} --level {wildcards.level} --outdir {params.outdir}"""
+
 
 rule concoct_extract_approved_scg_bins_all:
     input:

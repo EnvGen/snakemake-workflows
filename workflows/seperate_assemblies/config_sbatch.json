@@ -266,7 +266,7 @@
     "schedule_binning_extract_approved_scg_bins": "schedule_short",
     "schedule_binning_checkm": {
         "days": 0,
-        "hours": 3,
+        "hours": 9,
         "minutes": 0,
         "partition": "core",
         "cores": "8",
@@ -278,6 +278,32 @@
         "minutes": 0,
         "partition": "core",
         "cores": "1",
+        "extra_parameters": ""
+    },
+    "schedule_run_metaxa2": {
+        "days": 0,
+        "hours": 1,
+        "minutes": 0,
+        "partition": "core",
+        "cores": "1",
+        "extra_parameters": ""
+    },
+    "schedule_binning_checkm_phylogeny": {
+        "days": 0,
+        "hours": 1,
+        "minutes": 0,
+        "partition": "core",
+        "cores": "1",
+        "extra_parameters": ""
+    },
+    "schedule_binning_list_all_approved_bins": "schedule_short",
+    "schedule_binning_correctly_placed_16S": "schedule_short",
+    "schedule_pigz": {
+        "days": 0,
+        "hours": 3,
+        "minutes": 0,
+        "partition": "node",
+        "cores": "20",
         "extra_parameters": ""
     }
 }
