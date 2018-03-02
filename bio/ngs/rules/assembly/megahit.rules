@@ -33,6 +33,16 @@ rule megahit_assemble_sample:
            assembly/megahit/{wildcards.assembly_params}/{wildcards.sample}/
         """
 
+rule megahit_pigz_assembly:
+    input:
+        assembly="assembly/megahit/{assembly_params}/{sample}/final.contigs.fa"
+    output:
+        "assembly/megahit/{assembly_params}/{sample}/final.contigs.fa.gz"
+    params:
+        """
+            pigz {input.assembly}
+        """
+
 rule megahit_assemble_sample_all:
     input:
         expand("assembly/megahit/{assembly_params}/{sample}/final.contigs.fa", assembly_params=config["megahit_rules"]["assembly_params"], sample=config["megahit_rules"]["samples"])

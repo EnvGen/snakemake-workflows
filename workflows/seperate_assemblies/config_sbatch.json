@@ -1,6 +1,6 @@
 {
     "sbatch_general": {
-        "account": "snic2017-1-581",
+        "account": "snic2017-7-86",
         "wrapper_script": "/proj/uppstore2017125/b2014214/bin/sbatch_job"
     },
     "schedule_short": {
@@ -98,6 +98,14 @@
         "partition": "node",
         "cores": 20,
         "extra_parameters": "-C mem256GB --mail-type=END --mail-user=johannes.alneberg@scilifelab.se"
+    },
+    "schedule_megahit_pigz": {
+        "days": 0,
+        "hours": 1,
+        "minutes": 0,
+        "partition": "node",
+        "cores": 20,
+        "extra_parameters": ""
     },
     "schedule_megahit_coassemble": {
         "days": 8,
@@ -231,7 +239,7 @@
     },
     "schedule_kallisto_index": {
         "days": 0,
-        "hours": 6,
+        "hours": 4,
         "minutes": 0,
         "partition": "node",
         "cores": "20",
@@ -301,6 +309,14 @@
     "schedule_pigz": {
         "days": 0,
         "hours": 3,
+        "minutes": 0,
+        "partition": "node",
+        "cores": "20",
+        "extra_parameters": ""
+    },
+    "schedule_taxonomy_annotation_diamond_search": {
+        "days": 0,
+        "hours": 10,
         "minutes": 0,
         "partition": "node",
         "cores": "20",
