@@ -10,17 +10,27 @@ rule prodigal_run:
     log:
         "annotation/prodigal_{parameters}/genes/{assembly}/proteins/proteins.log"
     params:
-        prodigal_params=lambda wildcards: config["prodigal_rules"]["prodigal_params"][wildcards.parameters]
-    shell:
+        prodigal_params=lambda wildcards: config["prodigal_rules"]["prodigal_params"][wildcards.parameters],
+        tmp_dir = config['global_tmp_dir']
+    run:
+        if input[0].endswith('.gz'):
+            only_file_without_ext=os.path.splitext(os.path.basename(input[0]))[0]
+            new_input=params['tmp_dir'] + '/' + only_file_without_ext
+            additional_first_command = 'gzip -cd {0} > {1}'.format(input[0], new_input)
+        else:
+            new_input=input[0]
+            additional_first_command = 'echo "no additional_info"'
+        shell(
         """
-        {config[prodigal_rules][load_env]}
-        prodigal -i {input.asm} \
+        {config[prodigal_rules][load_env]} &&
+        {additional_first_command} &&
+        prodigal -i {new_input} \
             -a {output.aa} \
             -f gff \
             -d {output.ffn} \
             {params.prodigal_params} > {output.gff} \
             2> {log}
-        """
+        """)
 
 rule prodigal_run_all:
     input:
