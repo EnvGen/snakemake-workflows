@@ -17,10 +17,11 @@
 rule taxonomy_annotation_diamond_search:
     input:
         protein_fasta = "annotation/prodigal_default-meta/genes/{sample}/proteins/proteins.faa",
-        db = lambda wildcards: config['taxonomic_annotation']['diamond_dbpath'][wildcards.db]
+        db = lambda wildcards: config['taxonomic_annotation']['diamond']['databases'][wildcards.db],
+        prot_acc = config["taxonomic_annotation"]["lca_script"]["ncbi_taxonmap_gz"]
     output:
         tab_output = "taxonomy_annotation/diamond/{db}/{sample}/search_result.tsv"
     params:
         load_env = config['taxonomic_annotation']['diamond']['load_env']
     shell: 
-        "{params.load_env} && diamond blastp --threads 20 -f 6 qseqid qlen sseqid slen pident length mismatch gapopen qstart qend sstart send evalue bitscore staxids -t $SNIC_TMP --top 10 --seg yes --sensitive --query {input.protein_fasta} --db {input.db} --out {output.tab_output}"
+        "{params.load_env} && diamond blastp --threads 20 -f 6 qseqid qlen sseqid slen pident length mismatch gapopen qstart qend sstart send evalue bitscore staxids -t $SNIC_TMP --top 10 --masking 1 --sensitive --taxonmap {input.prot_acc} -q {input.protein_fasta} --db {input.db} --out {output.tab_output}"

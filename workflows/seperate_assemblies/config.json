@@ -549,7 +549,7 @@
         "rpkm_annotations_table_script": "BLUEPRINT_pipeline/toolbox/scripts/rpkm_annotations_table.py"
     },
     "taxonomic_annotation": {
-        "load_env": "module load bioinfo-tools diamond/0.9.10"
+        "load_env": "module load bioinfo-tools diamond/0.9.10",
         "databases_to_use": ["nr"],
         "diamond": {
             "load_env": "module load bioinfo-tools diamond/0.9.10",
@@ -566,9 +566,11 @@
             "load_env": "source activate BLUEPRINT_pipeline",
             "lca_script": "BLUEPRINT_pipeline/toolbox/scripts/taxonomy_from_genes_to_contigs/lca_per_contig.py",
             "ncbi_tree": "/proj/b2014214/nobackup/databases/megan/ncbi.tre",
+            "ncbi_taxonmap_gz": "/proj/uppstore2017124/data/databases/ncbi_taxonomy/20180206/prot.accession2taxid.gz",
             "ncbi_map": "/proj/b2014214/nobackup/databases/megan/ncbi.map",
             "nodes_dmp": "/proj/b2014214/nobackup/databases/megan/nodes.dmp"
-        }
+        },
+        "database_dir": "/proj/uppstore2017124/data/databases/ncbi_taxonomy/20180206/"
     },
     "internal_standards": {
         "load_env": "module load bioinfo-tools bamtools/2.3.0",
