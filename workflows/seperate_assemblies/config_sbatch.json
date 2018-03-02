@@ -135,8 +135,8 @@
         "extra_parameters": ""
     },
     "schedule_concoct_run_10K": {
-        "days": 2,
-        "hours": 0,
+        "days": 0,
+        "hours": 3,
         "minutes": 0,
         "partition": "node",
         "cores": "16",
