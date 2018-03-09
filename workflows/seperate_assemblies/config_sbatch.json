@@ -1,6 +1,6 @@
 {
     "sbatch_general": {
-        "account": "snic2017-7-86",
+        "account": "snic2017-1-581",
         "wrapper_script": "/proj/uppstore2017125/b2014214/bin/sbatch_job"
     },
     "schedule_short": {
@@ -99,7 +99,7 @@
         "cores": 20,
         "extra_parameters": "-C mem256GB --mail-type=END --mail-user=johannes.alneberg@scilifelab.se"
     },
-    "schedule_megahit_pigz": {
+    "schedule_megahit_pigz_assembly": {
         "days": 0,
         "hours": 1,
         "minutes": 0,

@@ -38,7 +38,7 @@ rule megahit_pigz_assembly:
         assembly="assembly/megahit/{assembly_params}/{sample}/final.contigs.fa"
     output:
         "assembly/megahit/{assembly_params}/{sample}/final.contigs.fa.gz"
-    params:
+    shell:
         """
             pigz {input.assembly}
         """
