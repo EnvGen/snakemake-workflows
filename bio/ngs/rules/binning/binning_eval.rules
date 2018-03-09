@@ -100,7 +100,8 @@ rule binning_correctly_placed_16S:
         all_approved =  "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/list_of_all_approved_bins_nocutup.tsv",
         checkm_taxonomy = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/checkm_tree_qa.tsv"
     output:
-        stats = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/16S_placement/{level}/stats_per_approved.tsv"
+        stats = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/16S_placement/{level}/stats_per_approved.tsv",
+        nr_mismatches = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/16S_placement/{level}/summary_nr_mismatches.tsv"
     params:
         compare_script = config["binning_rules"]["correctly_placed_16S_script"],
         outdir = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/16S_placement/{level}"
