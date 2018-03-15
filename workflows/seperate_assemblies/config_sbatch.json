@@ -144,10 +144,10 @@
     },
     "schedule_concoct_run_10K": {
         "days": 0,
-        "hours": 3,
+        "hours": 5,
         "minutes": 0,
         "partition": "node",
-        "cores": "16",
+        "cores": "20",
         "extra_parameters": "--mail-type=END --mail-user=johannes.alneberg@scilifelab.se"
     },
     "schedule_metabat_clustering_file": "schedule_short",
