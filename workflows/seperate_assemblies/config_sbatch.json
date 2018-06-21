@@ -271,6 +271,23 @@
         "cores": "1",
         "extra_parameters": ""
     },
+    "schedule_prodigal_run_mag_prokaryotes": "schedule_short",
+    "schedule_emapper_homology_search": {
+        "days": 0,
+        "hours": 1,
+        "minutes": 0,
+        "partition": "core",
+        "cores": "10",
+        "extra_parameters": ""
+    },
+    "schedule_emapper_annotate_hits": {
+        "days": 0,
+        "hours": 1,
+        "minutes": 0,
+        "partition": "core",
+        "cores": "10",
+        "extra_parameters": ""
+    },
     "schedule_binning_extract_approved_scg_bins": "schedule_short",
     "schedule_binning_checkm": {
         "days": 0,
@@ -305,7 +322,28 @@
         "extra_parameters": ""
     },
     "schedule_binning_list_all_approved_bins": "schedule_short",
+    "schedule_binning_list_all_approved_bins_eukaryotes": "schedule_short",
     "schedule_binning_correctly_placed_16S": "schedule_short",
+    "schedule_binning_assign_16S_taxonomy_to_mag": "schedule_short",
+    "schedule_binning_list_nocutup_bin_sizes": "schedule_short",
+    "schedule_binning_potential_eukaryotic_bins_on_length": "schedule_short",
+    "schedule_binning_mag_sample_profile": "schedule_short",
+    "schedule_binning_run_busco_eval": {
+        "days": 0,
+        "hours": 2,
+        "minutes": 0,
+        "partition": "node",
+        "cores": "20",
+        "extra_parameters": ""
+    },
+    "schedule_binning_run_busco_eval_round2": {
+        "days": 0,
+        "hours": 1,
+        "minutes": 0,
+        "partition": "node",
+        "cores": "20",
+        "extra_parameters": ""
+    },
     "schedule_pigz": {
         "days": 0,
         "hours": 3,

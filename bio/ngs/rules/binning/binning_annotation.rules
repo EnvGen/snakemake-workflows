@@ -1,0 +1,126 @@
+rule binning_annotation_run_augustus:
+    input:
+        "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/eukrep_results/summary.csv"
+    output:
+        "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/augustus_output/default_output.txt"
+    params:
+        load_env = config["binning_rules"]["load_augustus_env"],
+        augustus_parse_script = config["binning_rules"]["augustus_parse_script"]
+    shell:
+        """
+            set +u {params.load_env}; set -u
+            for bin_file in `dirname {input}`/*euk.fa;
+            do
+                bin_id=`basename $bin_file | cut -f 1 -d'.'`
+                aug_output_file=`dirname {output}`/"$bin_id".txt
+                augustus --gff3=on --species=fly $bin_file > $aug_output_file
+                python {params.augustus_parse_script} $aug_output_file > `dirname {output}`/"$bin_id".faa
+                grep -v '^#' $aug_output_file > `dirname {output}`/"$bin_id".gff
+            done
+            touch {output}
+        """
+
+rule binning_annotation_run_metaxa_eukaryotes:
+    input:
+        "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/eukrep_results/summary.csv"
+    output:
+        "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/metaxa_assignment/all_eukaryotes_output/default_output.txt"
+    params:
+        load_env = config["annotation_rules"]["metaxa_load_env"]
+    shell:
+        """
+            set +u {params.load_env}; set -u
+            for bin_file in `dirname {input}`/*euk.fa;
+            do
+                bin_id=`basename $bin_file | cut -f 1 -d'.'`
+                bin_output_dir=`dirname {output}`/"$bin_id"
+                mkdir -p $bin_output_dir
+                metaxa2 --plus T -i $bin_file -p $bin_output_dir
+            done
+            touch {output}
+        """
+
+# For now, this is hardcoded to use concoct, kallisto and a specific default speedup_mp concoct parameters
+rule prodigal_run_mag_prokaryotes:
+    input:
+        asm = "all_approved_bins/prokaryotes/concoct/kallisto/cutoff-1000-maxcluster-400-SpeedUp_Mp/{assembly}.fa"
+    output:
+        aa="annotation/prodigal_{parameters}/genes/{assembly}/proteins/proteins.faa",
+        gff="annotation/prodigal_{parameters}/genes/{assembly}/proteins/proteins.gff",
+        ffn="annotation/prodigal_{parameters}/genes/{assembly}/proteins/proteins.ffn"
+    log:
+        "annotation/prodigal_{parameters}/genes/{assembly}/proteins/proteins.log"
+    params:
+        prodigal_params=lambda wildcards: config["prodigal_rules"]["prodigal_params"][wildcards.parameters],
+        tmp_dir = config['global_tmp_dir']
+    run:
+        if input[0].endswith('.gz'):
+            only_file_without_ext=os.path.splitext(os.path.basename(input[0]))[0]
+            new_input=params['tmp_dir'] + '/' + only_file_without_ext
+            additional_first_command = 'gzip -cd {0} > {1}'.format(input[0], new_input)
+        else:
+            new_input=input[0]
+            additional_first_command = 'echo "no additional_info"'
+        shell(
+        """
+        {config[prodigal_rules][load_env]} &&
+        {additional_first_command} &&
+        prodigal -i {new_input} \
+            -a {output.aa} \
+            -f gff \
+            -d {output.ffn} \
+            {params.prodigal_params} > {output.gff} \
+            2> {log}
+        """)
+
+
+import os
+
+rule emapper_homology_search:
+    input:
+        "annotation/{gene_prediction}/genes/{genome_id}/proteins/proteins.faa"
+    output:
+        "annotation/eggnog_mapper/{gene_prediction}/{genome_id}/{genome_id}.emapper.seed_orthologs"
+    params:
+        resource_dir = config["emapper_rules"]["database_dir"], 
+        out = "{genome_id}",
+        tmpdir = os.path.join(os.path.expandvars(config["global_tmp_dir"]), "{genome_id}-eggnog"),
+        tmp_out = os.path.join(os.path.expandvars(config["global_tmp_dir"]), "{genome_id}-eggnog","{genome_id}"),
+        flags = "-m diamond --no_annot --no_file_comments",
+        load_env = config['emapper_rules']['load_env']
+    log: "annotation/eggnog_mapper/{gene_prediction}/{genome_id}/{genome_id}.emapper.seed_orthologs.log"
+    threads: 10
+    shell:
+        """
+        set +u; {params.load_env}; set -u
+        # Create temporary output dir
+        mkdir -p {params.tmpdir}
+        emapper.py {params.flags} --cpu {threads} -i {input[0]} -o {params.out} --temp_dir {params.tmpdir} --output_dir {params.tmpdir} --data_dir {params.resource_dir} 2>{log}
+        mv {params.tmp_out}.emapper.seed_orthologs {output[0]}
+        rm -rf {params.tmpdir}
+        """
+
+rule emapper_annotate_hits:
+    input:
+        "annotation/eggnog_mapper/{gene_prediction}/{genome_id}/{genome_id}.emapper.seed_orthologs"
+    output:
+        "annotation/eggnog_mapper/{gene_prediction}/{genome_id}/{genome_id}.emapper.annotations"
+    params:
+        resource_dir = config["emapper_rules"]["database_dir"], 
+        tmpdir = os.path.join(os.path.expandvars(config["global_tmp_dir"]), "{genome_id}-eggnog"),
+        out = "annotation/eggnog_mapper/{gene_prediction}/{genome_id}/{genome_id}",
+        flags = "--no_file_comments",
+        load_env = config['emapper_rules']['load_env']
+    log: "annotation/eggnog_mapper/{gene_prediction}/{genome_id}/{genome_id}.emapper.annotations.log"
+    threads: 10
+    shell:
+        """
+        set +u; {params.load_env}; set -u
+        #Copy eggnog.db 
+        mkdir -p /dev/shm/$SLURM_JOB_ID
+        cp {params.resource_dir}/eggnog.db /dev/shm/$SLURM_JOB_ID
+        emapper.py {params.flags} --cpu {threads} --annotate_hits_table {input[0]} -o {params.out} --data_dir /dev/shm/$SLURM_JOB_ID --usemem 2>{log}
+        rm -rf /dev/shm/$SLURM_JOB_ID
+        """
+
+

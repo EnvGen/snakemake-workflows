@@ -1,0 +1,49 @@
+import os
+
+rule emapper_homology_search:
+    input:
+        "annotation/{gene_prediction}/genes/{genome_id}/{genome_id}.faa"
+    output:
+        "annotation/eggnog_mapper/{gene_prediction}/{genome_id}/{genome_id}.emapper.seed_orthologs"
+    params:
+        resource_dir = config["emapper_rules"]["database_dir"], 
+        out = "{genome_id}",
+        tmpdir = os.path.join(os.path.expandvars(config["global_tmp_dir"]), "{genome_id}-eggnog"),
+        tmp_out = os.path.join(os.path.expandvars(config["global_tmp_dir"]), "{genome_id}-eggnog","{genome_id}"),
+        flags = "-m diamond --no_annot --no_file_comments",
+        load_env = config['emapper_rules']['load_env']
+    log: "{output}.log"
+    threads: 10
+    shell:
+        """
+        set +u; {params.load_env}; set -u
+        # Create temporary output dir
+        mkdir -p {params.tmpdir}
+        emapper.py {params.flags} --cpu {threads} -i {input[0]} -o {params.out} --temp_dir {params.tmpdir} --output_dir {params.tmpdir} --data_dir {params.resource_dir} 2>{log}
+        mv {params.tmp_out}.emapper.seed_orthologs {output[0]}
+        rm -rf {params.tmpdir}
+        """
+
+rule emapper_annotate_hits:
+    input:
+        "annotation/eggnog_mapper/{gene_prediction}/{genome_id}/{genome_id}.emapper.seed_orthologs"
+    output:
+        "annotation/eggnog_mapper/{gene_prediction}/{genome_id}/{genome_id}.emapper.annotations"
+    params:
+        resource_dir = config["emapper_rules"]["database_dir"], 
+        tmpdir = os.path.join(os.path.expandvars(config["global_tmp_dir"]), "{genome_id}-eggnog"),
+        out = "annotation/eggnog_mapper/{gene_prediction}/{genome_id}/{genome_id}",
+        flags = "--no_file_comments",
+        load_env = config['emapper_rules']['load_env']
+    log: "{output}.log"
+    threads: 10
+    shell:
+        """
+        set +u; {params.load_env}; set -u
+        #Copy eggnog.db 
+        mkdir -p /dev/shm/$SLURM_JOB_ID
+        cp {params.resource_dir}/eggnog.db /dev/shm/$SLURM_JOB_ID
+        emapper.py {params.flags} --cpu {threads} --annotate_hits_table {input[0]} -o {params.out} --data_dir /dev/shm/$SLURM_JOB_ID --usemem 2>{log}
+        rm -rf /dev/shm/$SLURM_JOB_ID
+        """
+

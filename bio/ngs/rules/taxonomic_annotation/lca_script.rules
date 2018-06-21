@@ -5,12 +5,14 @@ rule taxonomy_annotation_prepare_taxfiles_nr:
         sqlite_db=os.path.join(config["taxonomic_annotation"]["db_dir"],"nr_taxa.sqlite"),
         version_file=os.path.join(config["taxonomic_annotation"]["db_dir"],"version")
     params: 
-        script=config["taxonomic_annotation"]["make_lineage_script"]
+        script=config["taxonomic_annotation"]["make_lineage_script"],
+        load_env=config["taxonomic_annotation"]["lca_script_env"]
     log: 
         os.path.join(config["taxonomic_annotation"]["db_dir"],"ncbi.lineage.log")
     shell:
         """
         # Download protein -> taxid map
+        set +u; {params.load_env}; set -u
         echo Downloading prot.accession2taxid.gz
         curl -o {output.map}.gz ftp://ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz
         gunzip {output.map}.gz
@@ -32,52 +34,26 @@ rule taxonomy_annotation_download_taxdump:
         tar -xf {output.tar} -C {params.dir}
         """
 
-rule taxonomy_annotation_prepare_taxfiles_uniref:
-    input:
-        dbfile=os.path.join(config["taxonomic_annotation"]["diamond_dbpath"],"uniref{n}.fasta")
-    output:
-        lineage_file=os.path.join(config["taxonomic_annotation"]["db_dir"],"uniref{n}.lineage"),
-        map=os.path.join(config["taxonomic_annotation"]["db_dir"],"uniref{n}.accession2taxid"),
-        sqlite_db=os.path.join(config["taxonomic_annotation"]["db_dir"],"uniref{n}_taxa.sqlite")
-    params:
-        script=config["taxonomic_annotation"]["make_lineage_script"]
-    log:
-        os.path.join(config["taxonomic_annotation"]["db_dir"],"uniref{n}.lineage.log")
-    run:
-        import re
-        taxid_re = re.compile("TaxID=(\d+)")
-        with open(output.map, 'w') as fh:
-            for line in shell("grep '>' {input.dbfile}", iterable=True):
-              acc = line.rsplit()[0].replace(">","")
-              try:
-                  taxid = taxid_re.findall(line)[0]
-              except IndexError:
-                  # In case there is no taxid, add it at root
-                  taxid = "1"
-              fh.write(acc+"\t"+acc+"\t"+taxid+"\t.\n")
-        shell("python {params.script} -a {output.map} -d {output.sqlite_db} -o {output.lineage_file} 2> {log}")
-
-
 rule taxonomy_annotation_lca_script:
     input:
-        search_result = "taxonomy_annotation/diamond/{db}/{sample_set}/{sample}/search_result.tab",
+        search_result = "taxonomy_annotation/diamond/{db}/{sample}/search_result.tsv",
         gid_taxaid_mapping_file=lambda wildcards: os.path.join(config['taxonomic_annotation']['db_dir'], "{}.accession2taxid".format(wildcards.db)),
         gff_file="annotation/prodigal_default-meta/all_annotated_sequences/{sample}/proteins.gff2",
         lineage_file=lambda wildcards: os.path.join(config['taxonomic_annotation']['db_dir'], "{}.lineage".format(wildcards.db)),
     output:
-        genes="taxonomy_annotation/lca_script/{db}/{sample_set}/{sample}/taxonomy_genes.tab",
-        contigs="taxonomy_annotation/lca_script/{db}/{sample_set}/{sample}/taxonomy_contigs.tab",
-        genes_from_contigs="taxonomy_annotation/lca_script/{db}/{sample_set}/{sample}/taxonomy_genes_from_contigs.tab",
+        genes="taxonomy_annotation/lca_script/{db}/{sample}/taxonomy_genes.tsv",
+        contigs="taxonomy_annotation/lca_script/{db}/{sample}/taxonomy_contigs.tsv",
+        genes_from_contigs="taxonomy_annotation/lca_script/{db}/{sample}/taxonomy_genes_from_contigs.tsv",
     params:
         prefix = os.path.join(config["global_tmp_dir"], "{sample}", "taxonomy"),
         prefix_dirname = os.path.join(config["global_tmp_dir"], "{sample}"),
-        outdir = "taxonomy_annotation/lca_script/{db}/{sample_set}/{sample}/",
+        outdir = "taxonomy_annotation/lca_script/{db}/{sample}/",
         lca_script = config["taxonomic_annotation"]["lca_script"]
     shell:
         """
         mkdir -p {params.prefix_dirname}
 
-        python {params.lca_script} -i {input.diamond_input_file} -a {input.gid_taxaid_mapping_file} \
+        python {params.lca_script} -i {input.search_result} -a {input.gid_taxaid_mapping_file} \
         -b {input.gff_file} -l {input.lineage_file} -o {params.prefix}
 
         mv {params.prefix}* {params.outdir}

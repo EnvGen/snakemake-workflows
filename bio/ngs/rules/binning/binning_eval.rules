@@ -83,6 +83,21 @@ rule binning_extract_approved_scg_bins:
             touch {output}
         """
 
+rule binning_extract_checkm_stats_for_approved_scg_bins:
+    input:
+        checkm_stats = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/checkm_output/stats.tsv"
+    output:
+        "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/checkm_for_approved.tsv"
+    params:
+        extract_stats_script = config["binning_rules"]["extract_checkm_for_approved_bins_script"],
+        min_comp = config["binning_rules"]["min_completeness"],
+        max_cont = config["binning_rules"]["max_contamination"],
+        load_env = config["binning_rules"]["load_default_env"]
+    shell:
+        """ set +u {params.load_env}; set -u
+            python {params.extract_stats_script} {input.checkm_stats} --min_completeness {params.min_comp} --max_contamination {params.max_cont} > {output}
+        """
+
 rule binning_list_all_approved_bins:
     input:
         "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/all_approved_bins_nocutup/default_output.txt"
@@ -91,7 +106,80 @@ rule binning_list_all_approved_bins:
     params:
         input_dir = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/all_approved_bins_nocutup",
     shell:
-        """ls {params.input_dir}/*.fa | sed 's%^.*/\([0-9]*\).fa%\\1%g' > {output}"""
+        """
+            if ls {params.input_dir}/*.fa 1> /dev/null 2>&1; then
+                ls {params.input_dir}/*.fa | sed 's%^.*/\([0-9]*\).fa%\\1%g' > {output}
+            else
+                touch {output}
+            fi
+        """
+
+rule binning_list_all_approved_bins_eukaryotes:
+    input:
+        "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/eukrep_results/summary.csv"
+    output:
+        "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/list_of_all_approved_bins_nocutup_eukaryotes.tsv"
+    params:
+        input_dir = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/eukrep_results",
+    shell:
+        """
+            if ls {params.input_dir}/*_euk.fa 1> /dev/null 2>&1; then
+                ls {params.input_dir}/*_euk.fa | sed 's%^.*/\([0-9]*\)_euk.fa%\\1%g' > {output}
+            else
+                touch {output}
+            fi
+        """
+
+rule binning_mag_sample_profile:
+    input:
+        approved="binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/list_of_all_approved_bins_nocutup{domain}.tsv",
+        clustering="binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/clustering_nocutup.csv",
+        input_table="binning/{binning_alg}/{assembly}/input_{quant}/concoct_inputtableR.tsv",
+        kallisto_quant="quantification/{quant}/quant/{assembly}_10K/samples/{sample}/abundance.tsv.gz"
+    output:
+        "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/sample_profiles{domain}/{sample}.tsv"
+    params:
+        load_env = config["binning_rules"]["load_default_env"],
+        sample_profile_script = config["binning_rules"]["sample_profile_script"]
+    shell:
+        """
+            set +u {params.load_env}; set -u
+            python {params.sample_profile_script} {input.approved} {input.clustering} {input.input_table} {input.kallisto_quant} {wildcards.sample} {output} && touch {output}
+        """
+
+rule binning_assign_16S_taxonomy_to_mag:
+    input:
+        clustering = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/clustering_nocutup.csv",
+        taxonomy = "annotation/metaxa/{assembly}/all_contigs.taxonomy.txt",
+        all_approved =  "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/list_of_all_approved_bins_nocutup.tsv",
+        all_approved_euk =  "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/list_of_all_approved_bins_nocutup_eukaryotes.tsv"
+    output:
+        all_approved_prok = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/metaxa_assignment/approved_prok.tsv",
+        all_approved_euk = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/metaxa_assignment/approved_euk.tsv"
+    params:
+        compare_script = config["binning_rules"]["assign_metaxa_mag_script"],
+        outdir = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/metaxa_assignment"
+    shell:
+        """python {params.compare_script} --clustering_file {input.clustering} --taxonomy_file {input.taxonomy} --all_approved_file {input.all_approved} --all_approved_euk_file {input.all_approved_euk} --outdir {params.outdir}"""
+
+rule binning_extract_16S_fasta_for_mag:
+    input:
+        clustering = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/clustering_nocutup.csv",
+        taxonomy = "annotation/metaxa/{assembly}/all_contigs.taxonomy.txt",
+        metaxa_arch = "annotation/metaxa/{assembly}/all_contigs.archaea.fasta",
+        metaxa_bac = "annotation/metaxa/{assembly}/all_contigs.bacteria.fasta",
+        metaxa_euk = "annotation/metaxa/{assembly}/all_contigs.eukaryota.fasta",
+        all_approved_prok = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/list_of_all_approved_bins_nocutup.tsv",
+        all_approved_euk = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/list_of_all_approved_bins_nocutup_eukaryotes.tsv"
+    output:
+        all_approved_rrna_prok = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/metaxa_assignment/prok_rRNA.fasta",
+        all_approved_rrna_euk = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/metaxa_assignment/euk_rRNA.fasta"
+    params:
+        extract_script = config["binning_rules"]["extract_metaxa_mag_script"],
+        outdir = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/metaxa_assignment"
+        #bin_prefix = lambda wildcards: "{}_bin".format(wildcards.assembly.replace("meta-sensitive_", ""))
+    shell:
+        """python {params.extract_script} --clustering_file {input.clustering} --taxonomy_file {input.taxonomy} --rrna_prok_fasta_file <(cat {input.metaxa_arch} {input.metaxa_bac}) --rrna_euk_fasta_file {input.metaxa_euk} --all_approved_file {input.all_approved} --all_approved_euk_file {input.all_approved_euk} --outdir {params.outdir}"""
 
 rule binning_correctly_placed_16S:
     input:
@@ -109,6 +197,160 @@ rule binning_correctly_placed_16S:
         """python {params.compare_script} --clustering_file {input.clustering} --taxonomy_file {input.taxonomy} --all_approved_file {input.all_approved} --checkm_taxonomy_file {input.checkm_taxonomy} --level {wildcards.level} --outdir {params.outdir}"""
 
 
+rule binning_list_nocutup_bin_sizes:
+    input:
+        "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/all_bins_nocutup/default_output.txt"
+    output:
+        "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/list_of_all_bin_sizes.tsv"
+    params:
+        input_dir = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/all_bins_nocutup",
+    shell:
+        """echo "bin_nr,nr_bases" > {output}
+        for file in {params.input_dir}/*.fa; do bin_nr=`echo $file | cut -f 7 -d '/' | cut -f 1 -d '.'`; echo $bin_nr,`grep -v '^>' $file | tr -d '\n' | wc -m` >> {output}; done"""
+
+rule binning_potential_eukaryotic_bins_on_length:
+    """Make symlinks to large bins that are not approved prokaryotes"""
+    input:
+        input_bins_dir = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/all_bins_nocutup/default_output.txt",
+        bin_sizes = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/list_of_all_bin_sizes.tsv",
+        approved_bins = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/list_of_all_approved_bins_nocutup.tsv"
+    output:
+        "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/busco_input_bins_nocutup/default_output.txt",
+    params:
+        input_dir = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/all_bins_nocutup",
+        output_dir = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/busco_input_bins_nocutup",
+        long_but_unapproved_script = config["binning_rules"]["long_but_unapproved_script"]
+    shell:
+        """python {params.long_but_unapproved_script} {params.input_dir} {input.bin_sizes} {input.approved_bins} {params.output_dir} && touch {output}"""
+        
+
+rule binning_run_busco_eval:
+    input:
+        "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/busco_input_bins_nocutup/default_output.txt",
+    output:
+        "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/busco_results/default_output.txt"
+    params:
+        output_dir = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/busco_results/",
+        input_dir = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/busco_input_bins_nocutup",
+        load_env=config["binning_rules"]["load_busco_env"]
+    shell:
+        """ set +u; {params.load_env}; set -u
+        export AUGUSTUS_CONFIG_PATH=/crex1/proj/uppstore2017125/until_b2017017_is_moved/reference_binning_dir/busco_run_dir/augustus_config
+        for input_file in {params.input_dir}/*.fa
+        do 
+            cd busco_run_dir
+            assembly=`echo $input_file | cut -f 3 -d '/'`
+            bin_nr=`echo $input_file | cut -f 7 -d '/' | cut -f 1 -d '.'`
+            echo $assembly $bin_nr
+            python /sw/apps/bioinfo/BUSCO/2.0.1/milou/BUSCO -i ../$input_file -o "$assembly"_"$bin_nr"_general_eukaryotic -l /sw/apps/bioinfo/BUSCO/v2_lineage_sets/eukaryota_odb9/ -m genome -c 20 -sp fly
+            mv run_"$assembly"_"$bin_nr"_general_eukaryotic ../{params.output_dir}
+            cd ../
+        done
+        touch {output}
+        """
+
+rule binning_busco_table:
+    input:
+        "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/busco_results{round}/default_output.txt"
+    output:
+        "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/busco_results{round}/summary.csv"
+    params:
+        load_env=config["binning_rules"]["load_busco_env"],
+        input_dir = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/busco_results{round}"
+    shell:
+        """echo "bin_id,completeness,single,duplicated,fragmented,missing,total_searched" > {output}
+        for file in {params.input_dir}/*/short_summary*.txt
+        do
+            if [ ! -f $file ]; then
+                echo "File not found!"
+            else
+                stats=`grep 'C:' $file | sed 's/^  *//g' | sed 's/\[/,/g' | sed 's/\]//g' | sed 's/.://g'`
+                bin_id=`echo $file | cut -f 7 -d '/' | sed 's/run_{wildcards.assembly}_//g' | sed 's/_general_eukaryotic//g'`
+                paste -d ',' <(echo $bin_id) <(echo $stats) >> {output}
+            fi
+        done
+        """
+
+rule binning_approve_busco_table:
+    input:
+        input_dir_default = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/busco_input_bins_nocutup/default_output.txt",
+        busco_stats = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/busco_results/summary.csv"
+    output:
+        "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/all_approved_busco_bins/default_output.txt"
+    params:
+        min_comp = config["binning_rules"]["min_busco_completeness"],
+        max_cont = config["binning_rules"]["max_busco_contamination"],
+        load_env = config["binning_rules"]["load_default_env"],
+        input_dir = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/busco_input_bins_nocutup",
+        output_dir = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/all_approved_busco_bins",
+        approve_bins_script = config["binning_rules"]["approve_busco_bins_script"]
+    shell:
+        """set +u; {params.load_env}; set -u
+            python {params.approve_bins_script} {params.input_dir} {input.busco_stats} {params.output_dir} --min_completeness {params.min_comp} --max_contamination {params.max_cont} && touch {output}
+        """ 
+
+rule binning_eukrep_run:
+    input:
+        "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/all_approved_busco_bins/default_output.txt",
+    output:
+        "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/eukrep_results/summary.csv"
+    params:
+        output_dir = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/eukrep_results/",
+        input_dir = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/all_approved_busco_bins",
+        load_env=config["binning_rules"]["load_eukrep_env"]
+    shell:
+        """ set +u; {params.load_env}; set -u
+        echo "bin_id,nr_euk_seqs,nr_prok_seqs,nr_euk_bases,nr_prok_bases" > {output}
+        for input_file in {params.input_dir}/*.fa
+        do 
+            if [ ! -f $input_file ]; then
+                echo "File not found!"
+            else
+                sample=`echo $input_file | cut -f 3 -d '/' | cut -f 2- -d '_'`
+                output_euk_fa_file=`basename $input_file | sed 's/\.fa/_euk.fa/g'`
+                output_prok_fa_file=`basename $input_file | sed 's/\.fa/_prok.fa/g'`
+                output_euk_seq_list=`basename $input_file | sed 's/\.fa/_euk.txt/g'`
+                output_prok_seq_list=`basename $input_file | sed 's/\.fa/_prok.txt/g'`
+                EukRep -ff --min 1000 -i $input_file -o {params.output_dir}/$output_euk_fa_file --prokarya {params.output_dir}/$output_prok_fa_file
+                grep '^>' {params.output_dir}/$output_euk_fa_file > {params.output_dir}/$output_euk_seq_list
+                grep '^>' {params.output_dir}/$output_prok_fa_file > {params.output_dir}/$output_prok_seq_list
+                echo "$sample"_bin`basename $input_file | sed  's/.fa//g'`,`wc -l {params.output_dir}/$output_euk_seq_list | cut -f 1 -d ' '`,`wc -l {params.output_dir}/$output_prok_seq_list | cut -f 1 -d ' '`,`grep -v '^>' {params.output_dir}/$output_euk_fa_file | wc -c`,`grep -v '^>' {params.output_dir}/$output_prok_fa_file | wc -c` >> {output}
+            fi
+        done
+        """
+
+rule binning_run_busco_eval_round2:
+    input:
+        "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/eukrep_results/summary.csv",
+    output:
+        "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/busco_results_round2/default_output.txt"
+    params:
+        output_dir = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/busco_results_round2/",
+        input_dir = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/eukrep_results",
+        load_env=config["binning_rules"]["load_busco_env"]
+    shell:
+        """ set +u; {params.load_env}; set -u
+        export AUGUSTUS_CONFIG_PATH=/crex1/proj/uppstore2017125/until_b2017017_is_moved/reference_binning_dir/busco_run_dir/augustus_config
+        for input_file in {params.input_dir}/*_euk.fa
+        do 
+            if [ ! -f $input_file ]; then
+                echo "File not found!"
+            else
+                cd busco_run_dir
+                assembly=`echo $input_file | cut -f 3 -d '/'`
+                bin_nr=`echo $input_file | cut -f 7 -d '/' | cut -f 1 -d '.'`
+                echo $assembly $bin_nr
+                python /sw/apps/bioinfo/BUSCO/2.0.1/milou/BUSCO -i ../$input_file -o "$assembly"_"$bin_nr"_general_eukaryotic -l /sw/apps/bioinfo/BUSCO/v2_lineage_sets/eukaryota_odb9/ -m genome -c 20 -sp fly
+                mv run_"$assembly"_"$bin_nr"_general_eukaryotic ../{params.output_dir}
+                cd ../
+            fi
+        done
+        touch {output}
+        """
+
+
+#python {params.merge_script} {params.input_dir} && touch {output}
+            
 rule concoct_extract_approved_scg_bins_all:
     input:
         dynamic("concoct/approved_scg_bins/{cluster_name}.fa")

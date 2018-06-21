@@ -60,13 +60,25 @@
         "mapping_params": "local",
         "load_default_env": "source activate concoct_0.4.1 && module load bioinfo-tools hmmer/3.1b2 prodigal/2.6.3 samtools/1.5",
         "load_checkm_env": "source activate binning_checkm && module load bioinfo-tools prodigal/2.6.3 hmmer",
+        "load_busco_env": "module load bioinfo-tools BUSCO/2.0.1",
+        "load_eukrep_env": "source activate eukrep",
+        "load_augustus_env": "source activate basic_sandbox && module load bioinfo-tools augustus/3.2.3",
         "scripts_dir": "CONCOCT/scripts",
         "approve_bins_script": "toolbox/scripts/concoct/approve_bins_from_checkm.py",
+        "extract_checkm_for_approved_bins_script": "toolbox/scripts/concoct/extract_stats_for_approved.py",
+        "long_but_unapproved_script": "toolbox/scripts/concoct/long_but_unapproved_bins.py",
+        "approve_busco_bins_script": "toolbox/scripts/concoct/approve_bins_from_busco.py",
+        "min_busco_completeness": "40",
+        "max_busco_contamination": "10",
+        "sample_profile_script": "toolbox/scripts/concoct/sample_profile_for_mags.py",
         "min_completeness": "75",
         "max_contamination": "5",
         "dnadiff_tmp_dir": "$SNIC_TMP",
         "merge_clustering_script": "toolbox/scripts/concoct/merge_cutup_clustering.py",
         "extract_bins_script": "toolbox/scripts/concoct/extract_fasta_bins.py",
+        "assign_metaxa_mag_script": "toolbox/scripts/concoct/assign_metaxa_taxonomy.py",
+        "extract_metaxa_mag_script": "toolbox/scripts/concoct/extract_16S_fasta.py",
+        "augustus_parse_script": "toolbox/scripts/parse_augustus_basic.py",
         "correctly_placed_16S_script": "toolbox/scripts/concoct/correctly_placed_16S.py"
     },
     "concoct_rules": {
@@ -440,12 +452,17 @@
         "length_script": "BLUEPRINT_pipeline/toolbox/scripts/fasta_lengths.py",
         "dbs": ["pfam", "dbCAN", "EggNOG"],
         "prodigal_params": {
-            "default-meta": "-p meta"
+            "default-meta": "-p meta",
+            "default-single": ""
         }
     },
     "annotation_rules": {
         "gene_prediction": "prodigal_default-meta",
         "metaxa_load_env": "module load bioinfo-tools usearch/9.2.64 blast/2.6.0+ hmmer/3.1b2 MAFFT/7.310 && export PATH=/proj/uppstore2017125/b2014214/bin:$PATH"
+    },
+    "emapper_rules": {
+        "load_env": "source activate eggnog_mapper",
+        "database_dir": "/proj/uppstore2017125/transfer/eggnog-mapper"
     },
     "annotate_reference": {
         "load_env": "module load bioinfo-tools BioPerl/1.6.1_PERL5.10.1 blast/2.2.28+ hmmer/3.1b1-intel prodigal/2.6.3 gnuparallel"
@@ -574,7 +591,10 @@
     },
     "taxonomic_annotation": {
         "load_env": "module load bioinfo-tools diamond/0.9.10",
+        "lca_script_env": "source activate basic_sandbox", 
         "databases_to_use": ["nr"],
+        "make_lineage_script": "toolbox/scripts/assign_taxonomy_from_blast/new_lineage_file.py",
+        "db_dir": "databases",
         "diamond": {
             "load_env": "module load bioinfo-tools diamond/0.9.10",
             "databases": {

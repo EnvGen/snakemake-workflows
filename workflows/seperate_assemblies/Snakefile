@@ -126,13 +126,20 @@ for read_file in glob.glob("finished_reads/*.fq.gz"):
         config["bowtie2_rules"]["samples"][sample_name] = [sample_name]
 
 config['concoct_rules']['assemblies'] = {}
+config['prodigal_rules']['merging_sample_sets'] = {}
 for assembly_file in glob.glob("assembly/megahit/*/*/final.contigs.fa*"):
     if not '-slurm.out' in assembly_file:
         assembly_type = assembly_file.split('/')[2]
         sample_name = assembly_file.split('/')[3]
-        config['concoct_rules']['assemblies'][assembly_type + '_' + sample_name] = assembly_file
+        assembly_id = assembly_type + '_' + sample_name
+        config['concoct_rules']['assemblies'][assembly_id] = assembly_file
+
+        # No use of split sample sets
+        config['prodigal_rules']['merging_sample_sets'][assembly_id] = assembly_id
 
 config["assemblies"] = config["concoct_rules"]['assemblies']
+
+print(config['megahit_rules']['samples'].keys())
 
 #  add 10K cutup as references for bowtie2 to map against
 config["bowtie2_rules"].setdefault("references", {}).update({a + "_10K": "binning/concoct/{a}/cutup/contigs_10K.fasta.gz".format(a=a) for a in config["concoct_rules"]["assemblies"]})
@@ -155,7 +162,9 @@ include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/binning/binning_eval.rules")
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/annotation/prodigal.rules")
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/taxonomic_annotation/metaxa.rules")
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/taxonomic_annotation/diamond.rules")
+include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/taxonomic_annotation/lca_script.rules")
 include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/quality_control/internal_standards.rules")
+include: os.path.join(WORKFLOW_DIR, "bio/ngs/rules/binning/binning_annotation.rules")
 
 rule preprocess_all:
     input:
