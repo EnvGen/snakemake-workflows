@@ -176,10 +176,10 @@ rule binning_extract_16S_fasta_for_mag:
         all_approved_rrna_euk = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/metaxa_assignment/euk_rRNA.fasta"
     params:
         extract_script = config["binning_rules"]["extract_metaxa_mag_script"],
-        outdir = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/metaxa_assignment"
-        #bin_prefix = lambda wildcards: "{}_bin".format(wildcards.assembly.replace("meta-sensitive_", ""))
+        outdir = "binning/{binning_alg}/{assembly}/output_{quant}/{binning_params}/metaxa_assignment",
+        bin_prefix = lambda wildcards: "{}_bin".format("_".join(wildcards.assembly.split("_")[1:]))
     shell:
-        """python {params.extract_script} --clustering_file {input.clustering} --taxonomy_file {input.taxonomy} --rrna_prok_fasta_file <(cat {input.metaxa_arch} {input.metaxa_bac}) --rrna_euk_fasta_file {input.metaxa_euk} --all_approved_file {input.all_approved} --all_approved_euk_file {input.all_approved_euk} --outdir {params.outdir}"""
+        """python {params.extract_script} --clustering_file {input.clustering} --taxonomy_file {input.taxonomy} --rrna_prok_fasta_file <(cat {input.metaxa_arch} {input.metaxa_bac}) --rrna_euk_fasta_file {input.metaxa_euk} --all_approved_file {input.all_approved_prok} --all_approved_euk_file {input.all_approved_euk} --bin_prefix {params.bin_prefix} --outdir {params.outdir}"""
 
 rule binning_correctly_placed_16S:
     input:
