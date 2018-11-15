@@ -139,8 +139,6 @@ for assembly_file in glob.glob("assembly/megahit/*/*/final.contigs.fa*"):
 
 config["assemblies"] = config["concoct_rules"]['assemblies']
 
-print(config['megahit_rules']['samples'].keys())
-
 #  add 10K cutup as references for bowtie2 to map against
 config["bowtie2_rules"].setdefault("references", {}).update({a + "_10K": "binning/concoct/{a}/cutup/contigs_10K.fasta.gz".format(a=a) for a in config["concoct_rules"]["assemblies"]})
 config["kallisto_rules"]["references"] = config["bowtie2_rules"]["references"]
